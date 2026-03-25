@@ -752,10 +752,7 @@ function AccountsManager({ accounts, onRefresh }: { accounts: { id: string; emai
   const [saving, setSaving] = useState(false);
 
   const handleGoogleConnect = () => {
-    // In production, this would redirect to Google OAuth
-    // For now, manual entry
-    setShowAdd(true);
-    setForm({ provider: "GMAIL", email: "" });
+    window.location.href = "/api/email/connect/google";
   };
 
   const handleManualAdd = async () => {
