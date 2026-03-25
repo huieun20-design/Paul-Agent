@@ -128,7 +128,9 @@ export default function DashboardPage() {
     form.append("file", file);
     const res = await fetch("/api/baby-photo", { method: "POST", body: form });
     const data = await res.json();
-    if (data.url) {
+    if (data.error) {
+      alert(data.error);
+    } else if (data.url) {
       setPhotos(prev => [{ id: data.id, url: data.url }, ...prev]);
       setPhotoIndex(0);
     }
@@ -172,7 +174,7 @@ export default function DashboardPage() {
               {photos.length > 0 && <span className="text-[10px] text-gray-300">{photoIndex + 1}/{photos.length}</span>}
               <label className="text-[10px] font-semibold text-pink-500 cursor-pointer flex items-center gap-0.5 hover:text-pink-600">
                 {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+                <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={handleUpload} disabled={uploading} />
               </label>
             </div>
           </div>
@@ -180,7 +182,7 @@ export default function DashboardPage() {
             <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-pink-200 bg-pink-50/50 py-8 cursor-pointer hover:bg-pink-50">
               <ImagePlus className="h-6 w-6 text-pink-300 mb-1.5" />
               <p className="text-[11px] text-pink-400">Upload photos (max 20)</p>
-              <input type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+              <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={handleUpload} />
             </label>
           ) : (
             <div className="relative group rounded-xl overflow-hidden">

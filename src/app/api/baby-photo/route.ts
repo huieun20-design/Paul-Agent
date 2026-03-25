@@ -37,6 +37,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No file" }, { status: 400 });
   }
 
+  // Only allow browser-compatible image formats
+  const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+  if (!allowed.includes(file.type)) {
+    return NextResponse.json({ error: "Only JPG, PNG, GIF, WebP allowed. HEIC is not supported." }, { status: 400 });
+  }
+
   // Check count
   const { data: existing } = await getSupabase().storage.from(BUCKET).list(user.id);
   const count = (existing || []).filter(f => f.name !== ".emptyFolderPlaceholder").length;
