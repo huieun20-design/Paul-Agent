@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import { getAuthUser, unauthorized } from "@/lib/api-helpers";
 
 const BUCKET = "photos";
@@ -9,7 +9,7 @@ export async function GET() {
   const user = await getAuthUser();
   if (!user) return unauthorized();
 
-  const { data, error } = await supabase.storage
+  const { data, error } = await getSupabase().storage
     .from(BUCKET)
     .list(user.id, { limit: 20, sortBy: { column: "created_at", order: "desc" } });
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   // Check count
-  const { data: existing } = await supabase.storage.from(BUCKET).list(user.id);
+  const { data: existing } = await getSupabase().storage.from(BUCKET).list(user.id);
   const count = (existing || []).filter(f => f.name !== ".emptyFolderPlaceholder").length;
   if (count >= 20) {
     return NextResponse.json({ error: "Maximum 20 photos" }, { status: 400 });
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const bytes = await file.arrayBuffer();
 
-  const { error } = await supabase.storage
+  const { error } = await getSupabase().storage
     .from(BUCKET)
     .upload(path, bytes, {
       contentType: file.type || "image/jpeg",
@@ -74,7 +74,7 @@ export async function DELETE(request: Request) {
   const { id } = await request.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  await supabase.storage.from(BUCKET).remove([`${user.id}/${id}`]);
+  await getSupabase().storage.from(BUCKET).remove([`${user.id}/${id}`]);
 
   return NextResponse.json({ success: true });
 }
