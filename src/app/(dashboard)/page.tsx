@@ -203,26 +203,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Weather */}
-        <div className="col-span-4 card p-5">
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Weather</span>
-          {weather ? (
-            <div className="mt-3">
-              <div className="flex items-center gap-4">
-                {getWeatherIcon(weather.weatherCode, "h-12 w-12")}
-                <div>
-                  <p className="text-4xl font-bold text-gray-900">{weather.temp}°</p>
-                  <p className="text-sm text-gray-500">{weather.desc}</p>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <p className="text-xs text-gray-400 flex items-center gap-1.5"><Droplets className="h-3.5 w-3.5 text-blue-400" />{weather.humidity}%</p>
-                <p className="text-xs text-gray-400 flex items-center gap-1.5"><Wind className="h-3.5 w-3.5" />{weather.windSpeed}km/h</p>
-                <p className="text-xs text-gray-400 flex items-center gap-1.5"><Sun className="h-3.5 w-3.5 text-amber-400" />Feels {weather.feelsLike}°</p>
-                <p className="text-xs text-gray-400">📍 {weather.city}</p>
-              </div>
-            </div>
-          ) : <div className="flex items-center gap-2 text-gray-400 py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>}
-        </div>
+        <WeatherCard weather={weather} />
 
         {/* Calendar */}
         <div className="col-span-4 card p-5">
@@ -305,6 +286,88 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function WeatherCard({ weather }: { weather: Weather | null }) {
+  const hour = new Date().getHours();
+  const isNight = hour < 6 || hour >= 19;
+  const code = parseInt(weather?.weatherCode || "113");
+
+  // Sky gradient based on time + weather
+  const getSkyGradient = () => {
+    if (isNight) {
+      if ([176, 263, 266, 293, 296, 299, 302, 305, 308].includes(code)) return "from-[#1a1a2e] via-[#2d2d44] to-[#3a3a5c]"; // rainy night
+      if ([200, 386, 389].includes(code)) return "from-[#0f0f23] via-[#1a1a3e] to-[#2a2a4e]"; // storm night
+      return "from-[#0f0f23] via-[#1a1a3e] to-[#2d2b55]"; // clear night
+    }
+    if ([176, 263, 266, 293, 296, 299, 302, 305, 308, 353, 356, 359].includes(code)) return "from-[#667eaa] via-[#7b8eb8] to-[#94a3b8]"; // rainy
+    if ([200, 386, 389].includes(code)) return "from-[#374151] via-[#4b5563] to-[#6b7280]"; // storm
+    if ([179, 182, 227, 230, 323, 326, 329, 332, 335, 338].includes(code)) return "from-[#e2e8f0] via-[#cbd5e1] to-[#94a3b8]"; // snow
+    if (code === 122) return "from-[#94a3b8] via-[#a8b5c4] to-[#b8c4d0]"; // overcast
+    if (code === 116 || code === 119) return "from-[#60a5fa] via-[#7bb8f5] to-[#93c5fd]"; // partly cloudy
+    if (hour < 8) return "from-[#fda085] via-[#f6d365] to-[#87CEEB]"; // sunrise
+    if (hour >= 17) return "from-[#fa709a] via-[#f6d365] to-[#fee140]"; // sunset
+    return "from-[#3b82f6] via-[#60a5fa] to-[#93c5fd]"; // clear day
+  };
+
+  const isLightSky = [179, 182, 227, 230, 323, 326, 329, 332, 335, 338, 122].includes(code) && !isNight;
+  const textColor = isLightSky ? "text-gray-800" : "text-white";
+  const subTextColor = isLightSky ? "text-gray-600" : "text-white/70";
+
+  return (
+    <div className={cn("col-span-4 rounded-2xl p-5 bg-gradient-to-br overflow-hidden relative", getSkyGradient())}>
+      {/* Stars for night */}
+      {isNight && (
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="absolute h-0.5 w-0.5 bg-white rounded-full animate-pulse" style={{ top: `${10 + (i * 7) % 80}%`, left: `${5 + (i * 13) % 90}%`, animationDelay: `${i * 0.3}s`, opacity: 0.4 + (i % 3) * 0.3 }} />
+          ))}
+          {/* Moon */}
+          <div className="absolute top-3 right-4 h-8 w-8 rounded-full bg-yellow-100 shadow-[0_0_15px_rgba(253,224,71,0.4)]" />
+        </div>
+      )}
+
+      {/* Sun glow for daytime clear */}
+      {!isNight && code === 113 && (
+        <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-yellow-300/30 blur-2xl" />
+      )}
+
+      {/* Rain drops */}
+      {[176, 263, 266, 293, 296, 299, 302, 305, 308, 353, 356, 359].includes(code) && (
+        <div className="absolute inset-0 overflow-hidden opacity-30">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="absolute w-px bg-gradient-to-b from-transparent to-white/60" style={{ height: `${15 + i * 3}px`, top: `${(i * 11) % 60}%`, left: `${10 + (i * 12) % 80}%`, transform: "rotate(15deg)" }} />
+          ))}
+        </div>
+      )}
+
+      {/* Cloud overlay for cloudy weather */}
+      {(code === 116 || code === 119 || code === 122) && !isNight && (
+        <div className="absolute top-2 right-8 h-10 w-20 rounded-full bg-white/20 blur-md" />
+      )}
+
+      <div className="relative z-10">
+        <span className={cn("text-[11px] font-semibold uppercase tracking-wider", subTextColor)}>Weather</span>
+        {weather ? (
+          <div className="mt-3">
+            <div className="flex items-center gap-4">
+              {getWeatherIcon(weather.weatherCode, "h-12 w-12")}
+              <div>
+                <p className={cn("text-4xl font-bold", textColor)}>{weather.temp}°</p>
+                <p className={cn("text-sm", subTextColor)}>{weather.desc}</p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <p className={cn("text-xs flex items-center gap-1.5", subTextColor)}><Droplets className="h-3.5 w-3.5" />{weather.humidity}%</p>
+              <p className={cn("text-xs flex items-center gap-1.5", subTextColor)}><Wind className="h-3.5 w-3.5" />{weather.windSpeed}km/h</p>
+              <p className={cn("text-xs flex items-center gap-1.5", subTextColor)}><Sun className="h-3.5 w-3.5" />Feels {weather.feelsLike}°</p>
+              <p className={cn("text-xs", subTextColor)}>📍 {weather.city}</p>
+            </div>
+          </div>
+        ) : <div className="flex items-center gap-2 text-white/50 py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+      </div>
     </div>
   );
 }
