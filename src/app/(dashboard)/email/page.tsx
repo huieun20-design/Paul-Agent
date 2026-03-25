@@ -129,13 +129,14 @@ export default function EmailPage() {
   const [folder, setFolder] = useState("INBOX");
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<EmailAnalysis | null>(null);
   const [showCompose, setShowCompose] = useState(false);
   const [showAccounts, setShowAccounts] = useState(false);
   const [emailAccounts, setEmailAccounts] = useState<{ id: string; email: string; provider: string; _count: { emails: number } }[]>([]);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [replyMode, setReplyMode] = useState<"reply" | "forward" | null>(null);
   const [aiReply, setAiReply] = useState("");
   const [generatingReply, setGeneratingReply] = useState(false);
@@ -161,14 +162,23 @@ export default function EmailPage() {
     try {
       const res = await fetch("/api/email/accounts");
       const data = await res.json();
-      setEmailAccounts(data || []);
+      if (Array.isArray(data)) setEmailAccounts(data);
     } catch { /* ignore */ }
+    setAccountsLoaded(true);
   }, []);
 
   useEffect(() => {
     fetchEmails();
     fetchAccounts();
   }, [fetchEmails, fetchAccounts]);
+
+  // Auto-sync on first load if accounts exist but no emails
+  useEffect(() => {
+    if (accountsLoaded && emailAccounts.length > 0 && emails.length === 0 && !syncing && !loading) {
+      handleSync();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountsLoaded]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -370,7 +380,9 @@ export default function EmailPage() {
           ) : emails.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400">
               <Mail className="h-12 w-12 mb-4" />
-              {emailAccounts.length === 0 ? (
+              {!accountsLoaded ? (
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              ) : emailAccounts.length === 0 ? (
                 <>
                   <p className="text-sm font-medium text-gray-600">No email accounts connected</p>
                   <p className="text-xs text-gray-400 mt-1">Connect your Gmail or Outlook to get started</p>
@@ -381,10 +393,17 @@ export default function EmailPage() {
                     <Plus className="h-4 w-4" /> Connect Email Account
                   </button>
                 </>
+              ) : syncing ? (
+                <>
+                  <Loader2 className="h-6 w-6 animate-spin text-gray-400 mb-2" />
+                  <p className="text-sm">Syncing emails...</p>
+                </>
               ) : (
                 <>
                   <p className="text-sm">No emails found</p>
-                  <button onClick={handleSync} className="mt-3 text-sm text-gray-900 hover:text-gray-700">Sync your emails</button>
+                  <button onClick={handleSync} className="mt-3 flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                    <RefreshCw className="h-3.5 w-3.5" /> Sync Now
+                  </button>
                 </>
               )}
             </div>
