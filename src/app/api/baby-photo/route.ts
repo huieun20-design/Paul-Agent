@@ -1,33 +1,31 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { getAuthUser, unauthorized } from "@/lib/api-helpers";
 
-// Store photos as base64 in database (simple, no external storage needed)
-// For production, use Supabase Storage or S3
+const BUCKET = "photos";
 
 // GET — list photos
 export async function GET() {
   const user = await getAuthUser();
   if (!user) return unauthorized();
 
-  // Use a simple key-value approach with the user's settings
-  // Store photos in a dedicated table-like approach using Todo with special source
-  // Actually, let's use a simpler approach - store in a JSON field
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .list(user.id, { limit: 20, sortBy: { column: "created_at", order: "desc" } });
 
-  const photos = await prisma.todo.findMany({
-    where: { userId: user.id, source: "PHOTO" },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, title: true, description: true },
-  });
+  if (error) return NextResponse.json([]);
 
-  return NextResponse.json(photos.map(p => ({
-    id: p.id,
-    url: p.description, // base64 data URL stored here
-    name: p.title,
-  })));
+  const photos = (data || [])
+    .filter(f => f.name !== ".emptyFolderPlaceholder")
+    .map(f => ({
+      id: f.name,
+      url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${user.id}/${f.name}`,
+    }));
+
+  return NextResponse.json(photos);
 }
 
-// POST — upload photo (as base64)
+// POST — upload photo
 export async function POST(request: Request) {
   const user = await getAuthUser();
   if (!user) return unauthorized();
@@ -40,31 +38,32 @@ export async function POST(request: Request) {
   }
 
   // Check count
-  const count = await prisma.todo.count({
-    where: { userId: user.id, source: "PHOTO" },
-  });
+  const { data: existing } = await supabase.storage.from(BUCKET).list(user.id);
+  const count = (existing || []).filter(f => f.name !== ".emptyFolderPlaceholder").length;
   if (count >= 20) {
     return NextResponse.json({ error: "Maximum 20 photos" }, { status: 400 });
   }
 
-  // Convert to base64
+  const ext = file.name.split(".").pop() || "jpg";
+  const filename = `${Date.now()}.${ext}`;
+  const path = `${user.id}/${filename}`;
+
   const bytes = await file.arrayBuffer();
-  const base64 = Buffer.from(bytes).toString("base64");
-  const mimeType = file.type || "image/jpeg";
-  const dataUrl = `data:${mimeType};base64,${base64}`;
 
-  // Store in DB
-  const photo = await prisma.todo.create({
-    data: {
-      userId: user.id,
-      title: file.name,
-      description: dataUrl,
-      source: "PHOTO",
-      priority: "LOW",
-    },
-  });
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, bytes, {
+      contentType: file.type || "image/jpeg",
+      upsert: false,
+    });
 
-  return NextResponse.json({ id: photo.id, url: dataUrl, name: file.name });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+
+  return NextResponse.json({ id: filename, url });
 }
 
 // DELETE — remove photo
@@ -75,6 +74,7 @@ export async function DELETE(request: Request) {
   const { id } = await request.json();
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  await prisma.todo.delete({ where: { id, userId: user.id } });
+  await supabase.storage.from(BUCKET).remove([`${user.id}/${id}`]);
+
   return NextResponse.json({ success: true });
 }
