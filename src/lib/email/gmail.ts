@@ -216,34 +216,37 @@ export async function syncGmailEmails(
     const isRead = !message.labelIds.includes("UNREAD");
     const folder = message.labelIds.includes("SENT") ? "SENT" : "INBOX";
 
-    await prisma.email.create({
-      data: {
-        emailAccountId,
-        messageId: message.id,
-        threadId: message.threadId,
-        from: getHeader(headers, "From"),
-        to: parseEmailAddresses(getHeader(headers, "To")),
-        cc: parseEmailAddresses(getHeader(headers, "Cc")),
-        bcc: parseEmailAddresses(getHeader(headers, "Bcc")),
-        subject: getHeader(headers, "Subject"),
-        bodyText: text,
-        bodyHtml: html,
-        date: new Date(parseInt(message.internalDate)),
-        isRead,
-        folder: folder as "INBOX" | "SENT",
-        hasAttachments: attachments.length > 0,
-        attachments: {
-          create: attachments.map((att) => ({
-            filename: att.filename,
-            mimeType: att.mimeType,
-            size: att.size,
-            url: att.attachmentId, // Store attachment ID, download on demand
-          })),
+    try {
+      await prisma.email.create({
+        data: {
+          emailAccountId,
+          messageId: message.id,
+          threadId: message.threadId,
+          from: getHeader(headers, "From"),
+          to: parseEmailAddresses(getHeader(headers, "To")),
+          cc: parseEmailAddresses(getHeader(headers, "Cc")),
+          bcc: parseEmailAddresses(getHeader(headers, "Bcc")),
+          subject: getHeader(headers, "Subject"),
+          bodyText: text,
+          bodyHtml: html,
+          date: new Date(parseInt(message.internalDate)),
+          isRead,
+          folder: folder as "INBOX" | "SENT",
+          hasAttachments: attachments.length > 0,
+          attachments: {
+            create: attachments.map((att) => ({
+              filename: att.filename,
+              mimeType: att.mimeType,
+              size: att.size,
+              url: att.attachmentId,
+            })),
+          },
         },
-      },
-    });
-
-    synced++;
+      });
+      synced++;
+    } catch {
+      // Skip duplicate messageId
+    }
   }
 
   return synced;
@@ -282,34 +285,37 @@ export async function syncGmailSentEmails(
     const { text, html } = extractBody(message.payload);
     const attachments = extractAttachments(message.payload);
 
-    await prisma.email.create({
-      data: {
-        emailAccountId,
-        messageId: message.id,
-        threadId: message.threadId,
-        from: getHeader(headers, "From"),
-        to: parseEmailAddresses(getHeader(headers, "To")),
-        cc: parseEmailAddresses(getHeader(headers, "Cc")),
-        bcc: [],
-        subject: getHeader(headers, "Subject"),
-        bodyText: text,
-        bodyHtml: html,
-        date: new Date(parseInt(message.internalDate)),
-        isRead: true,
-        folder: "SENT",
-        hasAttachments: attachments.length > 0,
-        attachments: {
-          create: attachments.map((att) => ({
-            filename: att.filename,
-            mimeType: att.mimeType,
-            size: att.size,
-            url: att.attachmentId,
-          })),
+    try {
+      await prisma.email.create({
+        data: {
+          emailAccountId,
+          messageId: message.id,
+          threadId: message.threadId,
+          from: getHeader(headers, "From"),
+          to: parseEmailAddresses(getHeader(headers, "To")),
+          cc: parseEmailAddresses(getHeader(headers, "Cc")),
+          bcc: [],
+          subject: getHeader(headers, "Subject"),
+          bodyText: text,
+          bodyHtml: html,
+          date: new Date(parseInt(message.internalDate)),
+          isRead: true,
+          folder: "SENT",
+          hasAttachments: attachments.length > 0,
+          attachments: {
+            create: attachments.map((att) => ({
+              filename: att.filename,
+              mimeType: att.mimeType,
+              size: att.size,
+              url: att.attachmentId,
+            })),
+          },
         },
-      },
-    });
-
-    synced++;
+      });
+      synced++;
+    } catch {
+      // Skip duplicate messageId
+    }
   }
 
   return synced;
