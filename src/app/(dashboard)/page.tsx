@@ -93,7 +93,8 @@ function InvoiceBar({ label, count, amount, color, pct }: { label: string; count
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashData | null>(null);
+  const defaultData: DashData = { pendingOrders: 0, unpaidInvoices: 0, overdueInvoices: 0, overdueAmount: 0, cashBalance: 0, openTodos: 0, urgentTodos: 0, openClaims: 0, recentEmails: 0, incomingPayments30d: 0, outgoingPayments30d: 0, monthlyPayroll: 0 };
+  const [data, setData] = useState<DashData>(defaultData);
   const [weather, setWeather] = useState<Weather | null>(null);
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -103,10 +104,10 @@ export default function DashboardPage() {
   const quote = getTodayQuote();
 
   useEffect(() => {
-    fetch("/api/dashboard").then(r => r.json()).then(setData);
-    fetch("/api/weather").then(r => r.json()).then(setWeather);
-    fetch("/api/baby-photo").then(r => r.json()).then(r => { if (Array.isArray(r)) setPhotos(r); });
-    fetch("/api/todos").then(r => r.json()).then((d: unknown) => { if (Array.isArray(d)) setTodos(d.slice(0, 4)); });
+    fetch("/api/dashboard").then(r => r.json()).then(d => { if (d && !d.error) setData(d); }).catch(() => {});
+    fetch("/api/weather").then(r => r.json()).then(setWeather).catch(() => {});
+    fetch("/api/baby-photo").then(r => r.json()).then(r => { if (Array.isArray(r)) setPhotos(r); }).catch(() => {});
+    fetch("/api/todos").then(r => r.json()).then((d: unknown) => { if (Array.isArray(d)) setTodos(d.slice(0, 4)); }).catch(() => {});
   }, []);
 
   // Auto slideshow every 10 seconds
@@ -212,7 +213,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ROW 2 — Stats Cards */}
-      {data && (
+      {(
         <div className="grid grid-cols-5 gap-4">
           <StatCard icon={<Landmark className="h-4 w-4 text-blue-500" />} label="Cash Balance" value={`$${data.cashBalance.toLocaleString()}`} />
           <StatCard icon={<Mail className="h-4 w-4 text-violet-500" />} label="Unread Emails" value={`${data.recentEmails}`} />
@@ -223,7 +224,7 @@ export default function DashboardPage() {
       )}
 
       {/* ROW 3 — Tasks + Invoice Overview + Cash Flow */}
-      {data && (
+      {(
         <div className="grid grid-cols-12 gap-4">
           {/* Tasks */}
           <div className="col-span-3 card p-5">
