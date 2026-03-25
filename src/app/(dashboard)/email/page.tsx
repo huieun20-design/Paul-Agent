@@ -579,7 +579,17 @@ export default function EmailPage() {
                           <span className="flex-1 text-sm text-gray-800">
                             {action.title}
                           </span>
-                          <button className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700">
+                          <button
+                            onClick={async () => {
+                              await fetch(`/api/email/${selectedEmail.id}/execute-actions`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ actions: [action] }),
+                              });
+                              alert(`${action.type} created!`);
+                            }}
+                            className="rounded-lg bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700"
+                          >
                             Execute
                           </button>
                         </div>
