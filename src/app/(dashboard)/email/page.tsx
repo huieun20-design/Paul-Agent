@@ -173,11 +173,20 @@ export default function EmailPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetch("/api/email/sync", {
+      const res = await fetch("/api/email/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ maxResults: 50 }),
       });
+      const data = await res.json();
+      if (data.error) {
+        alert(`Sync error: ${data.error}`);
+      } else if (data.results) {
+        const errors = data.results.filter((r: { error?: string }) => r.error);
+        if (errors.length > 0) {
+          alert(`Synced ${data.totalSynced} emails. Errors: ${errors.map((e: { email: string; error: string }) => `${e.email}: ${e.error}`).join(", ")}`);
+        }
+      }
       await fetchEmails();
     } catch {
       console.error("Sync failed");
