@@ -14,8 +14,12 @@ import {
   Reply,
   Forward,
   Loader2,
+  Plus,
+  Settings,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 interface Email {
   id: string;
@@ -103,17 +107,21 @@ const priorityColors: Record<string, string> = {
   LOW: "bg-green-100 text-green-700",
 };
 
-const categoryColors: Record<string, string> = {
-  ORDER: "bg-blue-100 text-blue-700",
-  PAYMENT: "bg-green-100 text-green-700",
-  INVOICE: "bg-purple-100 text-purple-700",
-  SHIPPING: "bg-orange-100 text-orange-700",
-  CLAIM: "bg-red-100 text-red-700",
-  INQUIRY: "bg-cyan-100 text-cyan-700",
-  QUOTATION: "bg-indigo-100 text-indigo-700",
-  CONFIRMATION: "bg-emerald-100 text-emerald-700",
-  GENERAL: "bg-gray-100 text-gray-700",
+const categoryStyles: Record<string, { bg: string; text: string; active: string }> = {
+  ORDER: { bg: "bg-blue-50", text: "text-blue-600", active: "bg-blue-200 text-blue-800" },
+  PAYMENT: { bg: "bg-emerald-50", text: "text-emerald-600", active: "bg-emerald-200 text-emerald-800" },
+  INVOICE: { bg: "bg-violet-50", text: "text-violet-600", active: "bg-violet-200 text-violet-800" },
+  SHIPPING: { bg: "bg-amber-50", text: "text-amber-600", active: "bg-amber-200 text-amber-800" },
+  CLAIM: { bg: "bg-rose-50", text: "text-rose-600", active: "bg-rose-200 text-rose-800" },
+  INQUIRY: { bg: "bg-cyan-50", text: "text-cyan-600", active: "bg-cyan-200 text-cyan-800" },
+  QUOTATION: { bg: "bg-indigo-50", text: "text-indigo-600", active: "bg-indigo-200 text-indigo-800" },
+  CONFIRMATION: { bg: "bg-teal-50", text: "text-teal-600", active: "bg-teal-200 text-teal-800" },
+  GENERAL: { bg: "bg-gray-50", text: "text-gray-500", active: "bg-gray-200 text-gray-700" },
 };
+
+const categoryColors: Record<string, string> = Object.fromEntries(
+  Object.entries(categoryStyles).map(([k, v]) => [k, `${v.bg} ${v.text}`])
+);
 
 export default function EmailPage() {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -126,6 +134,8 @@ export default function EmailPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<EmailAnalysis | null>(null);
   const [showCompose, setShowCompose] = useState(false);
+  const [showAccounts, setShowAccounts] = useState(false);
+  const [emailAccounts, setEmailAccounts] = useState<{ id: string; email: string; provider: string; _count: { emails: number } }[]>([]);
   const [replyMode, setReplyMode] = useState<"reply" | "forward" | null>(null);
   const [aiReply, setAiReply] = useState("");
   const [generatingReply, setGeneratingReply] = useState(false);
@@ -147,9 +157,18 @@ export default function EmailPage() {
     }
   }, [folder, search, category]);
 
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/email/accounts");
+      const data = await res.json();
+      setEmailAccounts(data || []);
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     fetchEmails();
-  }, [fetchEmails]);
+    fetchAccounts();
+  }, [fetchEmails, fetchAccounts]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -247,7 +266,7 @@ export default function EmailPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] -m-8 bg-white">
+    <div className="flex h-[calc(100vh-3rem)] max-w-[1300px] mx-auto rounded-2xl overflow-hidden card">
       {/* Left Panel — Email List */}
       <div
         className={cn(
@@ -269,8 +288,8 @@ export default function EmailPage() {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                   folder === f.key
-                    ? "bg-blue-100 text-blue-700"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-50 text-gray-500 hover:bg-gray-100"
                 )}
               >
                 {f.label}
@@ -280,6 +299,13 @@ export default function EmailPage() {
 
           <div className="flex-1" />
 
+          <button
+            onClick={() => setShowAccounts(true)}
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+            title="Email accounts"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
           <button
             onClick={handleSync}
             disabled={syncing}
@@ -299,27 +325,31 @@ export default function EmailPage() {
               placeholder="Search emails..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
             />
           </div>
         </div>
 
         {/* Category tabs */}
         <div className="flex gap-1 overflow-x-auto border-b border-gray-200 px-4 py-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={cn(
-                "whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                category === cat
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              )}
-            >
-              {cat}
-            </button>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const style = categoryStyles[cat];
+            const isActive = category === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className={cn(
+                  "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                  cat === "All"
+                    ? isActive ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    : isActive ? style?.active : `${style?.bg} ${style?.text} hover:opacity-80`
+                )}
+              >
+                {cat === "All" ? "All" : `# ${cat}`}
+              </button>
+            );
+          })}
         </div>
 
         {/* Email List */}
@@ -329,15 +359,25 @@ export default function EmailPage() {
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
           ) : emails.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <Mail className="h-12 w-12 mb-3" />
-              <p className="text-sm">No emails found</p>
-              <button
-                onClick={handleSync}
-                className="mt-3 text-sm text-blue-600 hover:text-blue-700"
-              >
-                Sync your emails
-              </button>
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <Mail className="h-12 w-12 mb-4" />
+              {emailAccounts.length === 0 ? (
+                <>
+                  <p className="text-sm font-medium text-gray-600">No email accounts connected</p>
+                  <p className="text-xs text-gray-400 mt-1">Connect your Gmail or Outlook to get started</p>
+                  <button
+                    onClick={() => setShowAccounts(true)}
+                    className="mt-4 flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  >
+                    <Plus className="h-4 w-4" /> Connect Email Account
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm">No emails found</p>
+                  <button onClick={handleSync} className="mt-3 text-sm text-gray-900 hover:text-gray-700">Sync your emails</button>
+                </>
+              )}
             </div>
           ) : (
             emails.map((email) => (
@@ -347,9 +387,9 @@ export default function EmailPage() {
                 className={cn(
                   "flex w-full flex-col gap-1 border-b border-gray-100 px-4 py-3 text-left transition-colors",
                   selectedEmail?.id === email.id
-                    ? "bg-blue-50"
+                    ? "bg-gray-100"
                     : "hover:bg-gray-50",
-                  !email.isRead && "bg-blue-50/50"
+                  !email.isRead && "bg-gray-50/50"
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -489,7 +529,7 @@ export default function EmailPage() {
 
               {/* Sender info */}
               <div className="mt-4 flex items-start gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-semibold text-gray-700">
                   {extractName(selectedEmail.from)[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="flex-1">
@@ -671,7 +711,7 @@ export default function EmailPage() {
                         ? "Generating AI reply..."
                         : "Write your reply or click an AI tone above..."
                     }
-                    className="w-full rounded-lg border border-gray-200 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
                   />
                   <div className="mt-3 flex justify-end gap-2">
                     <button
@@ -683,7 +723,7 @@ export default function EmailPage() {
                     >
                       Cancel
                     </button>
-                    <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                    <button className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
                       <Send className="h-4 w-4" />
                       Send
                     </button>
@@ -697,6 +737,120 @@ export default function EmailPage() {
 
       {/* Compose Modal */}
       {showCompose && <ComposeModal onClose={() => setShowCompose(false)} />}
+
+      {/* Accounts Modal */}
+      <Modal isOpen={showAccounts} onClose={() => setShowAccounts(false)} title="Email Accounts" size="md">
+        <AccountsManager accounts={emailAccounts} onRefresh={fetchAccounts} />
+      </Modal>
+    </div>
+  );
+}
+
+function AccountsManager({ accounts, onRefresh }: { accounts: { id: string; email: string; provider: string; _count: { emails: number } }[]; onRefresh: () => void }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ provider: "GMAIL", email: "" });
+  const [saving, setSaving] = useState(false);
+
+  const handleGoogleConnect = () => {
+    // In production, this would redirect to Google OAuth
+    // For now, manual entry
+    setShowAdd(true);
+    setForm({ provider: "GMAIL", email: "" });
+  };
+
+  const handleManualAdd = async () => {
+    if (!form.email) return;
+    setSaving(true);
+    await fetch("/api/email/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    setSaving(false);
+    setShowAdd(false);
+    setForm({ provider: "GMAIL", email: "" });
+    onRefresh();
+  };
+
+  const providerIcons: Record<string, React.ReactNode> = {
+    GMAIL: <svg className="h-5 w-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
+    OUTLOOK: <svg className="h-5 w-5" viewBox="0 0 24 24"><path d="M0 0h11.377v11.372H0zm12.623 0H24v11.372H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z" fill="#00A4EF"/></svg>,
+    YAHOO: <Mail className="h-5 w-5 text-purple-600" />,
+    ICLOUD: <Mail className="h-5 w-5 text-blue-500" />,
+    CUSTOM: <Mail className="h-5 w-5 text-gray-500" />,
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Connected accounts */}
+      {accounts.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Connected</h4>
+          {accounts.map(acc => (
+            <div key={acc.id} className="flex items-center gap-3 rounded-xl border border-gray-200 p-3">
+              {providerIcons[acc.provider] || <Mail className="h-5 w-5 text-gray-400" />}
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-900">{acc.email}</p>
+                <p className="text-[11px] text-gray-400">{acc.provider} · {acc._count.emails} emails synced</p>
+              </div>
+              <span className="text-[10px] bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5 font-medium">Connected</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Connect buttons */}
+      <div className="space-y-2">
+        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Add Account</h4>
+        <button onClick={handleGoogleConnect} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+          {providerIcons.GMAIL}
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium text-gray-900">Gmail</p>
+            <p className="text-[11px] text-gray-400">Connect with Google OAuth</p>
+          </div>
+          <Plus className="h-4 w-4 text-gray-400" />
+        </button>
+        <button onClick={() => { setShowAdd(true); setForm({ provider: "OUTLOOK", email: "" }); }} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+          {providerIcons.OUTLOOK}
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium text-gray-900">Outlook / Microsoft</p>
+            <p className="text-[11px] text-gray-400">Connect with Microsoft OAuth</p>
+          </div>
+          <Plus className="h-4 w-4 text-gray-400" />
+        </button>
+        <button onClick={() => { setShowAdd(true); setForm({ provider: "CUSTOM", email: "" }); }} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+          {providerIcons.CUSTOM}
+          <div className="flex-1 text-left">
+            <p className="text-sm font-medium text-gray-900">Other (IMAP)</p>
+            <p className="text-[11px] text-gray-400">Yahoo, iCloud, or custom IMAP</p>
+          </div>
+          <Plus className="h-4 w-4 text-gray-400" />
+        </button>
+      </div>
+
+      {/* Manual add form */}
+      {showAdd && (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-700">Connect {form.provider} Account</h4>
+            <button onClick={() => setShowAdd(false)} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+            <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} placeholder="your@email.com" className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm" required />
+          </div>
+          <p className="text-[11px] text-gray-400">
+            {form.provider === "GMAIL" ? "You'll need to set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env for full OAuth." :
+             form.provider === "OUTLOOK" ? "You'll need to set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET in .env." :
+             "IMAP credentials can be configured after adding the account."}
+          </p>
+          <div className="flex justify-end">
+            <button onClick={handleManualAdd} disabled={saving || !form.email} className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50">
+              {saving ? "Connecting..." : "Connect Account"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -731,7 +885,7 @@ function ComposeModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-end p-4">
-      <div className="w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-2xl">
+      <div className="w-full max-w-lg card shadow-2xl">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <h3 className="text-sm font-semibold text-gray-900">New Message</h3>
           <button
@@ -747,21 +901,21 @@ function ComposeModal({ onClose }: { onClose: () => void }) {
             placeholder="To"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="w-full border-b border-gray-200 pb-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full border-b border-gray-200 pb-2 text-sm focus:border-gray-400 focus:outline-none"
           />
           <input
             type="text"
             placeholder="Cc"
             value={cc}
             onChange={(e) => setCc(e.target.value)}
-            className="w-full border-b border-gray-200 pb-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full border-b border-gray-200 pb-2 text-sm focus:border-gray-400 focus:outline-none"
           />
           <input
             type="text"
             placeholder="Subject"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full border-b border-gray-200 pb-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="w-full border-b border-gray-200 pb-2 text-sm focus:border-gray-400 focus:outline-none"
           />
           <textarea
             placeholder="Compose email..."
@@ -775,7 +929,7 @@ function ComposeModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={handleSend}
             disabled={sending || !to || !subject}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
             {sending ? "Sending..." : "Send"}

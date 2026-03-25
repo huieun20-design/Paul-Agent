@@ -59,7 +59,7 @@ export default function PayrollPage() {
       label: "Name",
       render: (e: Employee) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-700">
             {e.name[0]}
           </div>
           <div>
@@ -125,14 +125,14 @@ export default function PayrollPage() {
   ];
 
   return (
-    <div>
+    <div className="max-w-[1300px] mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Payroll</h1>
         <div className="flex gap-2">
           <button onClick={() => setShowPayroll(true)} className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
             <DollarSign className="h-4 w-4" /> Run Payroll
           </button>
-          <button onClick={() => setShowAddEmployee(true)} className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <button onClick={() => setShowAddEmployee(true)} className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
             <Plus className="h-4 w-4" /> Add Employee
           </button>
         </div>
@@ -140,15 +140,15 @@ export default function PayrollPage() {
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <div className="flex items-center gap-2 text-gray-500"><Users className="h-4 w-4" /><span className="text-sm">Employees</span></div>
           <p className="mt-1 text-2xl font-bold">{activeEmployees.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <div className="flex items-center gap-2 text-gray-500"><DollarSign className="h-4 w-4" /><span className="text-sm">Monthly Cost</span></div>
           <p className="mt-1 text-2xl font-bold">${monthlyTotal.toLocaleString()}</p>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-4">
+        <div className="card p-4">
           <div className="flex items-center gap-2 text-gray-500"><DollarSign className="h-4 w-4" /><span className="text-sm">Total Paid</span></div>
           <p className="mt-1 text-2xl font-bold">${totalPaid.toLocaleString()}</p>
         </div>
@@ -156,10 +156,10 @@ export default function PayrollPage() {
 
       {/* Tabs */}
       <div className="mt-6 flex gap-2">
-        <button onClick={() => setTab("employees")} className={cn("rounded-lg px-4 py-2 text-sm font-medium", tab === "employees" ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-gray-100")}>
+        <button onClick={() => setTab("employees")} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", tab === "employees" ? "bg-gray-900 text-white" : "bg-blue-50 text-blue-600 hover:bg-blue-100")}>
           Employees
         </button>
-        <button onClick={() => setTab("records")} className={cn("rounded-lg px-4 py-2 text-sm font-medium", tab === "records" ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-gray-100")}>
+        <button onClick={() => setTab("records")} className={cn("rounded-lg px-4 py-2 text-sm font-semibold", tab === "records" ? "bg-gray-900 text-white" : "bg-violet-50 text-violet-600 hover:bg-violet-100")}>
           Pay Records
         </button>
       </div>
@@ -204,19 +204,19 @@ function AddEmployeeForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700">Name</label>
-          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" required />
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm" required />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Position</label>
-          <input type="text" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+          <input type="text" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">Monthly Salary</label>
-          <input type="number" step="0.01" value={form.salary} onChange={(e) => setForm({ ...form, salary: e.target.value })} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" required />
+          <input type="number" step="0.01" value={form.salary} onChange={(e) => setForm({ ...form, salary: e.target.value })} className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm" required />
         </div>
       </div>
       <div className="flex justify-end">
-        <button type="submit" disabled={saving || !form.name || !form.salary} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+        <button type="submit" disabled={saving || !form.name || !form.salary} className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50">
           {saving ? "Adding..." : "Add Employee"}
         </button>
       </div>
@@ -252,7 +252,7 @@ function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuc
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700">Period</label>
-        <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+        <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm" />
       </div>
       <div className="rounded-lg bg-gray-50 p-4">
         <p className="text-sm text-gray-600">{employees.length} employees</p>

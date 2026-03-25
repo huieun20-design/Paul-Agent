@@ -3,3 +3,22 @@
 body {
   font-family: var(--font-inter), system-ui, sans-serif;
 }
+
+.bg-app {
+  background: #f0f0f3;
+  min-height: 100vh;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e8e8ec;
+  border-radius: 16px;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+@keyframes progressFill { from { width: 0; } }
+.progress-animated { animation: progressFill 1s ease-out; }

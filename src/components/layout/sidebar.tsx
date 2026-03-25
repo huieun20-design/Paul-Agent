@@ -5,11 +5,9 @@ import { usePathname } from "next/navigation";
 import {
   Mail,
   LayoutDashboard,
-  Package,
   FileText,
   CreditCard,
   Landmark,
-  Users,
   AlertTriangle,
   CheckSquare,
   DollarSign,
@@ -22,12 +20,8 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Email", href: "/email", icon: Mail },
-  { name: "Orders", href: "/orders", icon: Package },
-  { name: "Invoices", href: "/invoices", icon: FileText },
-  { name: "Payments", href: "/payments", icon: CreditCard },
-  { name: "Banking", href: "/banking", icon: Landmark },
-  { name: "CRM", href: "/crm", icon: Users },
-  { name: "Claims", href: "/claims", icon: AlertTriangle },
+  { name: "Finance", href: "/finance", icon: Landmark },
+  { name: "Billing", href: "/billing", icon: FileText },
   { name: "Todo", href: "/todo", icon: CheckSquare },
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -37,52 +31,44 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-gray-200 bg-white">
+    <aside className="flex h-screen w-16 flex-col items-center bg-white border-r border-gray-200 py-4">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold text-sm">
-          P
-        </div>
-        <span className="text-lg font-semibold text-gray-900">Paul Agent</span>
+      <div className="mb-6">
+        <span className="text-xl font-black text-gray-900 tracking-tight">PK</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <ul className="space-y-1">
-          {navigation.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/" && pathname.startsWith(item.href));
-            return (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-700 hover:bg-gray-100"
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      <nav className="flex-1 flex flex-col items-center gap-1">
+        {navigation.map((item) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              title={item.name}
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-xl transition-all",
+                isActive
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              )}
+            >
+              <item.icon className="h-[18px] w-[18px]" />
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Logout */}
-      <div className="border-t border-gray-200 p-3">
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          Logout
-        </button>
-      </div>
+      <button
+        onClick={() => signOut({ callbackUrl: "/login" })}
+        title="Logout"
+        className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
+      >
+        <LogOut className="h-[18px] w-[18px]" />
+      </button>
     </aside>
   );
 }

@@ -347,16 +347,24 @@ enum PaymentType {
 // ============================================
 
 model BankAccount {
-  id          String          @id @default(cuid())
-  companyId   String
-  name        String
-  type        BankAccountType
-  bankName    String?
+  id            String          @id @default(cuid())
+  companyId     String
+  name          String
+  type          BankAccountType
+  bankName      String?
   accountNumber String?
-  balance     Float           @default(0)
-  currency    String          @default("USD")
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  balance       Float           @default(0)
+  currency      String          @default("USD")
+
+  // Credit Card specific fields
+  creditLimit   Float?
+  dueDate       Int?            // Day of month (1-31)
+  minimumPay    Float?
+  apr           Float?          // Annual percentage rate
+  statementDate Int?            // Day of month statement closes
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   payments     Payment[]

@@ -31,7 +31,7 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto card">
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-50">
@@ -39,7 +39,7 @@ export function DataTable<T extends { id: string }>({
               <th
                 key={col.key}
                 className={cn(
-                  "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500",
+                  "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-400",
                   col.className
                 )}
               >

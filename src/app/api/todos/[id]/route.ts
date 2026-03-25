@@ -19,6 +19,7 @@ export async function PATCH(
       ...(body.priority && { priority: body.priority }),
       ...(body.dueDate !== undefined && { dueDate: body.dueDate ? new Date(body.dueDate) : null }),
       ...(body.isCompleted !== undefined && { isCompleted: body.isCompleted }),
+      ...(body.source && { source: body.source }),
     },
   });
 

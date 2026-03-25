@@ -58,15 +58,15 @@ export default function SettingsPage() {
     .slice(0, 2);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-[1300px] mx-auto">
       <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
 
       {/* Profile Section */}
-      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
+      <div className="mt-8 card p-6">
         <h2 className="text-lg font-semibold text-gray-900">Profile</h2>
 
         <div className="mt-6 flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-xl font-bold text-white">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-xl font-bold text-white">
             {initials}
           </div>
           <div>
@@ -82,7 +82,7 @@ export default function SettingsPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
             />
           </div>
           <div>
@@ -98,7 +98,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSaveProfile}
               disabled={saving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {saving ? "Saving..." : "Save Changes"}
             </button>
@@ -108,7 +108,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Password Section */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+      <div className="mt-6 card p-6">
         <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
 
         {passwordError && (
@@ -122,7 +122,7 @@ export default function SettingsPage() {
               type="password"
               value={passwordForm.current}
               onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
               required
             />
           </div>
@@ -132,7 +132,7 @@ export default function SettingsPage() {
               type="password"
               value={passwordForm.newPassword}
               onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
               required
               minLength={6}
             />
@@ -143,7 +143,7 @@ export default function SettingsPage() {
               type="password"
               value={passwordForm.confirm}
               onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
               required
             />
           </div>
@@ -151,7 +151,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={passwordSaving}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {passwordSaving ? "Changing..." : "Change Password"}
             </button>
@@ -161,7 +161,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Connected Accounts */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+      <div className="mt-6 card p-6">
         <h2 className="text-lg font-semibold text-gray-900">Connected Accounts</h2>
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
