@@ -446,6 +446,7 @@ enum TodoSource {
   MANUAL
   AI_EMAIL
   AI_FOLLOWUP
+  PHOTO
 }
 
 // ============================================

@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     where: {
       userId: user.id,
       isCompleted: showCompleted ? undefined : false,
+      source: { not: "PHOTO" },
       ...(priority && { priority: priority as "HIGH" | "MEDIUM" | "LOW" }),
     },
     orderBy: [{ isCompleted: "asc" }, { priority: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],

@@ -95,7 +95,7 @@ function InvoiceBar({ label, count, amount, color, pct }: { label: string; count
 export default function DashboardPage() {
   const [data, setData] = useState<DashData | null>(null);
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [todos, setTodos] = useState<{ id: string; title: string; priority: string; isCompleted: boolean }[]>([]);
@@ -105,7 +105,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch("/api/dashboard").then(r => r.json()).then(setData);
     fetch("/api/weather").then(r => r.json()).then(setWeather);
-    fetch("/api/baby-photo").then(r => r.json()).then(setPhotos);
+    fetch("/api/baby-photo").then(r => r.json()).then(r => { if (Array.isArray(r)) setPhotos(r); });
     fetch("/api/todos").then(r => r.json()).then((d: unknown) => { if (Array.isArray(d)) setTodos(d.slice(0, 4)); });
   }, []);
 
@@ -126,16 +126,18 @@ export default function DashboardPage() {
     const form = new FormData();
     form.append("file", file);
     const res = await fetch("/api/baby-photo", { method: "POST", body: form });
-    const { url } = await res.json();
-    setPhotos(prev => [url, ...prev]);
-    setPhotoIndex(0);
+    const data = await res.json();
+    if (data.url) {
+      setPhotos(prev => [{ id: data.id, url: data.url }, ...prev]);
+      setPhotoIndex(0);
+    }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleDeletePhoto = async (url: string) => {
-    await fetch("/api/baby-photo", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
-    setPhotos(prev => prev.filter(p => p !== url));
+  const handleDeletePhoto = async (photo: { id: string; url: string }) => {
+    await fetch("/api/baby-photo", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: photo.id }) });
+    setPhotos(prev => prev.filter(p => p.id !== photo.id));
     setPhotoIndex(0);
   };
 
@@ -182,7 +184,7 @@ export default function DashboardPage() {
           ) : (
             <div className="relative group rounded-xl overflow-hidden">
               <img
-                src={photos[photoIndex % photos.length]}
+                src={photos[photoIndex % photos.length]?.url}
                 alt="family"
                 className="w-full aspect-[4/3] object-cover rounded-xl transition-opacity duration-700"
               />
