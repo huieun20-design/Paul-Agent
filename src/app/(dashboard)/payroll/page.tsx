@@ -129,11 +129,11 @@ export default function PayrollPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Payroll</h1>
         <div className="flex gap-2">
-          <button onClick={() => setShowPayroll(true)} className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-            <DollarSign className="h-4 w-4" /> Run Payroll
+          <button onClick={() => setShowPayroll(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <DollarSign className="h-4 w-4 text-gray-400" /> Run Payroll
           </button>
-          <button onClick={() => setShowAddEmployee(true)} className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
-            <Plus className="h-4 w-4" /> Add Employee
+          <button onClick={() => setShowAddEmployee(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <Plus className="h-4 w-4 text-gray-400" /> Add Employee
           </button>
         </div>
       </div>

@@ -72,8 +72,8 @@ export default function BillingPage() {
           <p className="text-sm text-gray-400 mt-0.5">Invoices & Claims</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowAddClaim(true)} className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"><AlertTriangle className="h-3.5 w-3.5" /> Claim</button>
-          <button onClick={() => setShowAddInvoice(true)} className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"><Plus className="h-3.5 w-3.5" /> Invoice</button>
+          <button onClick={() => setShowAddClaim(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"><AlertTriangle className="h-4 w-4 text-gray-400" /> Claim</button>
+          <button onClick={() => setShowAddInvoice(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"><Plus className="h-4 w-4 text-gray-400" /> Invoice</button>
         </div>
       </div>
 

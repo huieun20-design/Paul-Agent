@@ -171,8 +171,8 @@ export default function TodoPage() {
           <option value="LOW">Low</option>
         </select>
         <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs" />
-        <button onClick={addTodo} disabled={!newTitle.trim() || adding} className="rounded-lg bg-gray-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50">
-          {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add"}
+        <button onClick={addTodo} disabled={!newTitle.trim() || adding} className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50">
+          {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Add</>}
         </button>
       </div>
 
