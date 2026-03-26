@@ -1084,24 +1084,45 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
     if (mode === "forward" && !forwardTo.trim()) { alert("Enter recipient email"); return; }
     setSending(true);
     try {
-      await fetch("/api/email/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accountId: selectedAccountId,
-          to: mode === "reply" ? [email.from.replace(/.*<(.+)>.*/, "$1")] : forwardTo.split(",").map(s => s.trim()),
-          bcc: bcc ? bcc.split(",").map(s => s.trim()) : [],
-          subject: `${mode === "reply" ? "Re" : "Fwd"}: ${email.subject}`,
-          body: content,
-          ...(mode === "reply" && { inReplyTo: email.messageId, threadId: email.threadId }),
-        }),
-      });
-      onSent();
+      const formData = new FormData();
+      formData.append("accountId", selectedAccountId);
+      formData.append("to", mode === "reply" ? email.from.replace(/.*<(.+)>.*/, "$1") : forwardTo);
+      formData.append("bcc", bcc);
+      formData.append("cc", "");
+      formData.append("subject", `${mode === "reply" ? "Re" : "Fwd"}: ${email.subject}`);
+      formData.append("body", content);
+      if (mode === "reply") {
+        formData.append("inReplyTo", email.messageId);
+        if (email.threadId) formData.append("threadId", email.threadId);
+      }
+      attachments.forEach(file => formData.append("attachments", file));
+
+      const res = await fetch("/api/email/send", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.error) { alert(`Send failed: ${data.error}`); } else { onSent(); }
     } catch {
       alert("Failed to send");
     } finally {
       setSending(false);
     }
+  };
+
+  // Contact autocomplete
+  const [suggestions, setSuggestions] = useState<{ email: string; name: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const searchContacts = async (query: string) => {
+    if (query.length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
+    const res = await fetch(`/api/email/contacts?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    setSuggestions(data);
+    setShowSuggestions(data.length > 0);
+  };
+
+  const addContact = (email: string) => {
+    const current = forwardTo ? forwardTo + ", " : "";
+    setForwardTo(current + email);
+    setShowSuggestions(false);
   };
 
   const fieldClass = "flex-1 border-0 bg-transparent px-1 py-0.5 text-sm text-gray-800 focus:outline-none";
@@ -1111,18 +1132,38 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
       <div className="bg-white">
         {/* Header fields — Apple Mail style */}
         <div className="border-b border-gray-100 px-6 py-1">
-          <div className="flex items-center py-1.5 border-b border-gray-100">
+          <div className="relative flex items-center py-1.5 border-b border-gray-100">
             <span className="text-sm text-gray-400 w-14">To:</span>
             {mode === "reply" ? (
               <span className="text-sm text-gray-800">{email.from}</span>
             ) : (
-              <input type="text" value={forwardTo} onChange={e => setForwardTo(e.target.value)} placeholder="Recipients" className={fieldClass} />
+              <div className="flex-1 relative">
+                <input type="text" value={forwardTo}
+                  onChange={e => { setForwardTo(e.target.value); const parts = e.target.value.split(","); searchContacts(parts[parts.length - 1].trim()); }}
+                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder="Type name or email..." className={fieldClass} />
+                {showSuggestions && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+                    {suggestions.map(c => (
+                      <button key={c.email} type="button" onMouseDown={() => addContact(c.email)}
+                        className="flex items-center gap-3 w-full px-3 py-2 hover:bg-gray-50 text-left">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">{c.name[0]?.toUpperCase()}</div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                          <p className="text-xs text-gray-400 truncate">{c.email}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
           {showBcc && (
             <div className="flex items-center py-1.5 border-b border-gray-100">
               <span className="text-sm text-gray-400 w-14">Bcc:</span>
-              <input type="text" value={bcc} onChange={e => setBcc(e.target.value)} className={fieldClass} />
+              <input type="text" value={bcc} onChange={e => setBcc(e.target.value)} placeholder="Type name or email..." className={fieldClass} />
             </div>
           )}
           <div className="flex items-center py-1.5 border-b border-gray-100">
