@@ -1,36 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAuthUser } from "@/lib/api-helpers";
 
-// GET /api/email/contacts?q=search — Auto-complete contacts from email history
+// GET /api/email/contacts?q=search
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json([]);
-  }
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json([]);
 
-  const userId = (session.user as { id: string }).id;
   const q = request.nextUrl.searchParams.get("q") || "";
 
-  // Get user's email accounts
   const accounts = await prisma.emailAccount.findMany({
-    where: { userId },
+    where: { userId: user.id },
     select: { id: true },
   });
   const accountIds = accounts.map(a => a.id);
-
   if (accountIds.length === 0) return NextResponse.json([]);
 
-  // Get unique email addresses from sent emails (to/cc) and received (from)
+  // Fetch recent emails — no Prisma filter on arrays
   const emails = await prisma.email.findMany({
-    where: {
-      emailAccountId: { in: accountIds },
-      OR: q ? [
-        { from: { contains: q, mode: "insensitive" } },
-        { to: { hasSome: [q] } },
-      ] : undefined,
-    },
+    where: { emailAccountId: { in: accountIds } },
     select: { from: true, to: true, cc: true },
     take: 500,
     orderBy: { date: "desc" },
@@ -40,6 +28,7 @@ export async function GET(request: NextRequest) {
   const contactMap = new Map<string, { email: string; name: string }>();
 
   function parseContact(raw: string) {
+    if (!raw) return;
     const match = raw.match(/^"?([^"<]*)"?\s*<?([^>]+@[^>]+)>?$/);
     if (match) {
       const name = match[1].trim();
@@ -61,9 +50,9 @@ export async function GET(request: NextRequest) {
     e.cc.forEach(parseContact);
   }
 
-  // Filter by query
+  // Filter by query in JS
   let results = Array.from(contactMap.values());
-  if (q) {
+  if (q && q.length >= 1) {
     const lower = q.toLowerCase();
     results = results.filter(c =>
       c.email.toLowerCase().includes(lower) ||

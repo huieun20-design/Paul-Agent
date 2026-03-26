@@ -1087,9 +1087,26 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
     }
   }, [aiReply]);
 
+  const savedSelection = useRef<Range | null>(null);
+
+  // Save selection before clicking toolbar buttons
+  const saveSelection = () => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) savedSelection.current = sel.getRangeAt(0).cloneRange();
+  };
+
+  const restoreSelection = () => {
+    const sel = window.getSelection();
+    if (sel && savedSelection.current) {
+      sel.removeAllRanges();
+      sel.addRange(savedSelection.current);
+    }
+  };
+
   const exec = (cmd: string, value?: string) => {
-    document.execCommand(cmd, false, value);
     editorRef.current?.focus();
+    restoreSelection();
+    setTimeout(() => document.execCommand(cmd, false, value), 0);
   };
 
   const handleLink = () => {
@@ -1237,7 +1254,7 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
         </div>
 
         {/* Toolbar — Gmail style */}
-        <div className="flex flex-wrap items-center gap-0.5 px-4 py-1 border-b border-gray-100 bg-gray-50/50">
+        <div className="flex flex-wrap items-center gap-0.5 px-4 py-1 border-b border-gray-100 bg-gray-50/50" onMouseDown={saveSelection}>
           {/* AI tone */}
           {["friendly", "formal", "firm", "negotiation"].map(tone => (
             <button key={tone} onClick={() => onGenerateReply(tone)} disabled={generatingReply}
@@ -1323,7 +1340,15 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
             <Paperclip className="h-3.5 w-3.5" />
           </button>
           <input ref={fileInputRef} type="file" multiple className="hidden"
-            onChange={e => { if (e.target.files) setAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+            onChange={e => {
+              const files = e.target.files;
+              if (files && files.length > 0) {
+                const newFiles = Array.from(files);
+                setAttachments(current => [...current, ...newFiles]);
+              }
+              // Reset so same file can be added again
+              if (fileInputRef.current) fileInputRef.current.value = "";
+            }} />
         </div>
 
         {/* Rich text editor */}
@@ -1332,6 +1357,9 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
           contentEditable
           suppressContentEditableWarning
           onInput={() => { if (editorRef.current) setAiReply(editorRef.current.innerHTML); }}
+          onBlur={saveSelection}
+          onKeyUp={saveSelection}
+          onMouseUp={saveSelection}
           className="px-6 py-4 min-h-[200px] text-sm text-gray-800 leading-relaxed focus:outline-none"
           style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
           data-placeholder={generatingReply ? "Generating AI reply..." : "Compose your message..."}
