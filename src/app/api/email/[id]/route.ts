@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { markGmailEmailRead } from "@/lib/email/gmail";
 
 // GET /api/email/[id] — Get single email
 export async function GET(
@@ -27,12 +28,17 @@ export async function GET(
     return NextResponse.json({ error: "Email not found" }, { status: 404 });
   }
 
-  // Mark as read
+  // Mark as read — sync to Gmail
   if (!email.isRead) {
     await prisma.email.update({
       where: { id },
       data: { isRead: true },
     });
+
+    // Sync read status to Gmail (non-blocking)
+    try {
+      markGmailEmailRead(email.emailAccountId, email.messageId, true).catch(() => {});
+    } catch { /* ignore */ }
   }
 
   return NextResponse.json(email);

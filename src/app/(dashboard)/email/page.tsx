@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Mail,
   Search,
@@ -958,11 +958,27 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
   emailAccounts: { id: string; email: string }[];
 }) {
   const [forwardTo, setForwardTo] = useState("");
+  const [cc, setCc] = useState("");
   const [sending, setSending] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState(() => {
+    const match = emailAccounts.find(a => email.to.some(t => t.toLowerCase().includes(a.email.toLowerCase())));
+    return match?.id || emailAccounts[0]?.id || "";
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Find which account received this email
-  const fromAccount = emailAccounts.find(a => email.to.some(t => t.toLowerCase().includes(a.email.toLowerCase())));
-  const replyTo = mode === "reply" ? email.from : forwardTo;
+  const selectedAccount = emailAccounts.find(a => a.id === selectedAccountId);
+
+  // Toolbar buttons for formatting
+  const formatText = (tag: string) => {
+    const wraps: Record<string, [string, string]> = {
+      bold: ["<b>", "</b>"], italic: ["<i>", "</i>"], underline: ["<u>", "</u>"],
+      ul: ["<ul><li>", "</li></ul>"], ol: ["<ol><li>", "</li></ol>"],
+      link: ['<a href="URL">', "</a>"],
+    };
+    const [open, close] = wraps[tag] || ["", ""];
+    setAiReply(aiReply + open + close);
+  };
 
   const handleSend = async () => {
     if (!aiReply.trim()) return;
@@ -973,8 +989,9 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          accountId: fromAccount?.id || emailAccounts[0]?.id,
-          to: [mode === "reply" ? email.from.replace(/.*<(.+)>.*/, "$1") : forwardTo],
+          accountId: selectedAccountId,
+          to: mode === "reply" ? [email.from.replace(/.*<(.+)>.*/, "$1")] : forwardTo.split(",").map(s => s.trim()),
+          cc: cc ? cc.split(",").map(s => s.trim()) : [],
           subject: `${mode === "reply" ? "Re" : "Fwd"}: ${email.subject}`,
           body: aiReply,
           ...(mode === "reply" && { inReplyTo: email.messageId, threadId: email.threadId }),
@@ -991,34 +1008,87 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
   return (
     <div className="border-t border-gray-200 px-6 py-4">
       <div className="rounded-xl border border-gray-200 p-4">
-        <div className="mb-3 flex items-center justify-between">
+        {/* Header — From / To / Cc */}
+        <div className="space-y-2 mb-3">
+          {/* From selector */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">{mode === "reply" ? "Reply" : "Forward"}</span>
-            {mode === "reply" && <span className="text-xs text-gray-400">to {email.from}</span>}
+            <span className="text-xs text-gray-400 w-10">From</span>
+            {emailAccounts.length > 1 ? (
+              <select value={selectedAccountId} onChange={e => setSelectedAccountId(e.target.value)}
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-sm text-gray-700 focus:outline-none">
+                {emailAccounts.map(a => <option key={a.id} value={a.id}>{a.email}</option>)}
+              </select>
+            ) : (
+              <span className="text-sm text-gray-700">{selectedAccount?.email || "No account"}</span>
+            )}
           </div>
-          <div className="flex gap-1.5">
-            {["friendly", "formal", "firm", "negotiation"].map(tone => (
-              <button key={tone} onClick={() => onGenerateReply(tone)} disabled={generatingReply}
-                className="flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50">
-                <Sparkles className="h-3 w-3" />{tone}
-              </button>
-            ))}
+          {/* To */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 w-10">To</span>
+            {mode === "reply" ? (
+              <span className="text-sm text-gray-700">{email.from}</span>
+            ) : (
+              <input type="text" placeholder="recipient@email.com (comma for multiple)" value={forwardTo} onChange={e => setForwardTo(e.target.value)}
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-sm focus:border-gray-400 focus:outline-none" />
+            )}
+          </div>
+          {/* Cc */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 w-10">Cc</span>
+            <input type="text" placeholder="Optional" value={cc} onChange={e => setCc(e.target.value)}
+              className="flex-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 text-sm focus:border-gray-400 focus:outline-none" />
           </div>
         </div>
 
-        {mode === "forward" && (
-          <input type="email" placeholder="Recipient email..." value={forwardTo} onChange={e => setForwardTo(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm mb-3 focus:border-gray-400 focus:outline-none" />
+        {/* Formatting toolbar */}
+        <div className="flex items-center gap-1 mb-2 border-b border-gray-100 pb-2">
+          <button onClick={() => formatText("bold")} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 font-bold text-xs" title="Bold">B</button>
+          <button onClick={() => formatText("italic")} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 italic text-xs" title="Italic">I</button>
+          <button onClick={() => formatText("underline")} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 underline text-xs" title="Underline">U</button>
+          <div className="w-px h-4 bg-gray-200 mx-1" />
+          <button onClick={() => formatText("ul")} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 text-xs" title="Bullet list">• List</button>
+          <button onClick={() => formatText("ol")} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 text-xs" title="Numbered list">1. List</button>
+          <button onClick={() => formatText("link")} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 text-xs" title="Insert link">Link</button>
+          <div className="w-px h-4 bg-gray-200 mx-1" />
+          {/* AI tone buttons */}
+          {["friendly", "formal", "firm", "negotiation"].map(tone => (
+            <button key={tone} onClick={() => onGenerateReply(tone)} disabled={generatingReply}
+              className="flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-[10px] font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50">
+              <Sparkles className="h-2.5 w-2.5" />{tone}
+            </button>
+          ))}
+        </div>
+
+        {/* Editor */}
+        <textarea value={aiReply} onChange={e => setAiReply(e.target.value)} rows={8}
+          placeholder={generatingReply ? "Generating AI reply..." : "Compose your message..."}
+          className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm focus:border-gray-400 focus:outline-none resize-y min-h-[120px]" />
+
+        {/* Attachments */}
+        {attachments.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {attachments.map((file, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-2 py-1">
+                <Paperclip className="h-3 w-3 text-gray-400" />
+                <span className="text-xs text-gray-600 max-w-32 truncate">{file.name}</span>
+                <span className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(0)}KB</span>
+                <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+              </div>
+            ))}
+          </div>
         )}
 
-        <textarea value={aiReply} onChange={e => setAiReply(e.target.value)} rows={6}
-          placeholder={generatingReply ? "Generating AI reply..." : "Write your reply or click an AI tone above..."}
-          className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm focus:border-gray-400 focus:outline-none" />
-
+        {/* Bottom bar */}
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs text-gray-400">
-            {fromAccount ? `Sending from ${fromAccount.email}` : emailAccounts.length > 0 ? `Sending from ${emailAccounts[0].email}` : "No account connected"}
-          </span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
+              <Paperclip className="h-3.5 w-3.5" /> Attach
+            </button>
+            <input ref={fileInputRef} type="file" multiple className="hidden"
+              onChange={e => { if (e.target.files) setAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+            <span className="text-[10px] text-gray-300">{attachments.length > 0 ? `${attachments.length} file(s)` : ""}</span>
+          </div>
           <div className="flex gap-2">
             <button onClick={onCancel} className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancel</button>
             <button onClick={handleSend} disabled={sending || !aiReply.trim()}
