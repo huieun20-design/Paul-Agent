@@ -108,21 +108,46 @@ const priorityColors: Record<string, string> = {
   LOW: "bg-green-100 text-green-700",
 };
 
-const categoryStyles: Record<string, { bg: string; text: string; active: string }> = {
-  ORDER: { bg: "bg-blue-50", text: "text-blue-600", active: "bg-blue-200 text-blue-800" },
-  PAYMENT: { bg: "bg-emerald-50", text: "text-emerald-600", active: "bg-emerald-200 text-emerald-800" },
-  INVOICE: { bg: "bg-violet-50", text: "text-violet-600", active: "bg-violet-200 text-violet-800" },
-  SHIPPING: { bg: "bg-amber-50", text: "text-amber-600", active: "bg-amber-200 text-amber-800" },
-  CLAIM: { bg: "bg-rose-50", text: "text-rose-600", active: "bg-rose-200 text-rose-800" },
-  INQUIRY: { bg: "bg-cyan-50", text: "text-cyan-600", active: "bg-cyan-200 text-cyan-800" },
-  QUOTATION: { bg: "bg-indigo-50", text: "text-indigo-600", active: "bg-indigo-200 text-indigo-800" },
-  CONFIRMATION: { bg: "bg-teal-50", text: "text-teal-600", active: "bg-teal-200 text-teal-800" },
+const PALETTE = [
+  { bg: "bg-blue-50", text: "text-blue-600", active: "bg-blue-200 text-blue-800" },
+  { bg: "bg-emerald-50", text: "text-emerald-600", active: "bg-emerald-200 text-emerald-800" },
+  { bg: "bg-violet-50", text: "text-violet-600", active: "bg-violet-200 text-violet-800" },
+  { bg: "bg-amber-50", text: "text-amber-600", active: "bg-amber-200 text-amber-800" },
+  { bg: "bg-rose-50", text: "text-rose-600", active: "bg-rose-200 text-rose-800" },
+  { bg: "bg-cyan-50", text: "text-cyan-600", active: "bg-cyan-200 text-cyan-800" },
+  { bg: "bg-indigo-50", text: "text-indigo-600", active: "bg-indigo-200 text-indigo-800" },
+  { bg: "bg-teal-50", text: "text-teal-600", active: "bg-teal-200 text-teal-800" },
+  { bg: "bg-pink-50", text: "text-pink-600", active: "bg-pink-200 text-pink-800" },
+  { bg: "bg-lime-50", text: "text-lime-600", active: "bg-lime-200 text-lime-800" },
+  { bg: "bg-orange-50", text: "text-orange-600", active: "bg-orange-200 text-orange-800" },
+  { bg: "bg-fuchsia-50", text: "text-fuchsia-600", active: "bg-fuchsia-200 text-fuchsia-800" },
+  { bg: "bg-sky-50", text: "text-sky-600", active: "bg-sky-200 text-sky-800" },
+  { bg: "bg-red-50", text: "text-red-600", active: "bg-red-200 text-red-800" },
+  { bg: "bg-purple-50", text: "text-purple-600", active: "bg-purple-200 text-purple-800" },
+];
+
+const fixedCategoryStyles: Record<string, { bg: string; text: string; active: string }> = {
+  ORDER: PALETTE[0], PAYMENT: PALETTE[1], INVOICE: PALETTE[2], SHIPPING: PALETTE[3],
+  CLAIM: PALETTE[4], INQUIRY: PALETTE[5], QUOTATION: PALETTE[6], CONFIRMATION: PALETTE[7],
   GENERAL: { bg: "bg-gray-50", text: "text-gray-500", active: "bg-gray-200 text-gray-700" },
 };
 
-const categoryColors: Record<string, string> = Object.fromEntries(
-  Object.entries(categoryStyles).map(([k, v]) => [k, `${v.bg} ${v.text}`])
-);
+function getCategoryStyle(cat: string): { bg: string; text: string; active: string } {
+  if (fixedCategoryStyles[cat]) return fixedCategoryStyles[cat];
+  // Generate consistent color from category name
+  let hash = 0;
+  for (let i = 0; i < cat.length; i++) hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  return PALETTE[Math.abs(hash) % PALETTE.length];
+}
+
+// Dynamic getter
+const categoryStyles: Record<string, { bg: string; text: string; active: string }> = new Proxy({} as Record<string, { bg: string; text: string; active: string }>, {
+  get: (_, key: string) => getCategoryStyle(key),
+});
+
+const categoryColors: Record<string, string> = new Proxy({} as Record<string, string>, {
+  get: (_, key: string) => { const s = getCategoryStyle(key); return `${s.bg} ${s.text}`; },
+});
 
 export default function EmailPage() {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -134,6 +159,7 @@ export default function EmailPage() {
   const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
   const [showCategoryEdit, setShowCategoryEdit] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [categoryKeywords, setCategoryKeywords] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -173,11 +199,13 @@ export default function EmailPage() {
     setAccountsLoaded(true);
   }, []);
 
-  // Load custom categories from localStorage
+  // Load custom categories + keywords from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("emailCategories");
       if (saved) setCategories(JSON.parse(saved));
+      const savedKw = localStorage.getItem("categoryKeywords");
+      if (savedKw) setCategoryKeywords(JSON.parse(savedKw));
     }
   }, []);
 
@@ -204,16 +232,23 @@ export default function EmailPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountsLoaded]);
 
-  const handleSync = async () => {
+  const handleSync = async (recategorizeOnly = false) => {
     setSyncing(true);
     try {
+      const payload = recategorizeOnly
+        ? { recategorize: true, customCategories: categoryKeywords }
+        : { maxResults: 100, customCategories: categoryKeywords };
+
       const res = await fetch("/api/email/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxResults: 100 }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (data.error) {
+
+      if (data.recategorized) {
+        // Re-categorize done
+      } else if (data.error) {
         alert(`Sync error: ${data.error}`);
       } else if (data.results) {
         const errors = data.results.filter((r: { error?: string }) => r.error);
@@ -365,7 +400,7 @@ export default function EmailPage() {
             <Settings className="h-4 w-4" />
           </button>
           <button
-            onClick={handleSync}
+            onClick={() => handleSync()}
             disabled={syncing}
             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
             title="Sync emails"
@@ -447,7 +482,7 @@ export default function EmailPage() {
               ) : (
                 <>
                   <p className="text-sm">No emails found</p>
-                  <button onClick={handleSync} className="mt-3 flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
+                  <button onClick={() => handleSync()} className="mt-3 flex items-center gap-2 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800">
                     <RefreshCw className="h-3.5 w-3.5" /> Sync Now
                   </button>
                 </>
@@ -845,39 +880,60 @@ export default function EmailPage() {
       </Modal>
 
       {/* Category Edit Modal */}
-      <Modal isOpen={showCategoryEdit} onClose={() => setShowCategoryEdit(false)} title="Edit Categories" size="sm">
+      <Modal isOpen={showCategoryEdit} onClose={() => setShowCategoryEdit(false)} title="Edit Categories" size="md">
         <div className="space-y-3">
           {categories.map((cat) => {
-            const style = categoryStyles[cat];
+            const style = getCategoryStyle(cat);
+            const kw = categoryKeywords[cat] || [];
             return (
-              <div key={cat} className="flex items-center gap-3">
-                <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", style?.bg || "bg-gray-100", style?.text || "text-gray-600")}>
-                  # {cat}
-                </span>
-                <div className="flex-1" />
-                {!DEFAULT_CATEGORIES.includes(cat) && (
-                  <button
-                    onClick={() => {
-                      const updated = categories.filter(c => c !== cat);
-                      setCategories(updated);
-                      localStorage.setItem("emailCategories", JSON.stringify(updated));
-                    }}
-                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
+              <div key={cat} className="rounded-xl border border-gray-200 p-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", style.bg, style.text)}>
+                    # {cat}
+                  </span>
+                  <div className="flex-1" />
+                  {!DEFAULT_CATEGORIES.includes(cat) && (
+                    <button
+                      onClick={() => {
+                        const updated = categories.filter(c => c !== cat);
+                        setCategories(updated);
+                        localStorage.setItem("emailCategories", JSON.stringify(updated));
+                        const updatedKw = { ...categoryKeywords };
+                        delete updatedKw[cat];
+                        setCategoryKeywords(updatedKw);
+                        localStorage.setItem("categoryKeywords", JSON.stringify(updatedKw));
+                      }}
+                      className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Keywords (comma separated)..."
+                  defaultValue={kw.join(", ")}
+                  onBlur={(e) => {
+                    const keywords = e.target.value.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
+                    const updatedKw = { ...categoryKeywords, [cat]: keywords };
+                    setCategoryKeywords(updatedKw);
+                    localStorage.setItem("categoryKeywords", JSON.stringify(updatedKw));
+                  }}
+                  className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5 text-xs text-gray-600"
+                />
               </div>
             );
           })}
+
+          {/* Add new category */}
           <div className="flex gap-2 pt-2 border-t border-gray-100">
             <input
               type="text"
-              placeholder="New category name..."
+              placeholder="NEW_CATEGORY"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value.toUpperCase().replace(/[^A-Z_]/g, ""))}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && newCategoryName) {
+                if (e.key === "Enter" && newCategoryName && !categories.includes(newCategoryName)) {
                   const updated = [...categories, newCategoryName];
                   setCategories(updated);
                   localStorage.setItem("emailCategories", JSON.stringify(updated));
@@ -888,7 +944,7 @@ export default function EmailPage() {
             />
             <button
               onClick={() => {
-                if (!newCategoryName) return;
+                if (!newCategoryName || categories.includes(newCategoryName)) return;
                 const updated = [...categories, newCategoryName];
                 setCategories(updated);
                 localStorage.setItem("emailCategories", JSON.stringify(updated));
@@ -900,7 +956,19 @@ export default function EmailPage() {
               Add
             </button>
           </div>
-          <p className="text-[10px] text-gray-400">Default categories cannot be removed. Custom categories use uppercase letters and underscores.</p>
+
+          {/* Re-categorize button */}
+          <div className="pt-3 border-t border-gray-100">
+            <button
+              onClick={() => { setShowCategoryEdit(false); handleSync(true); }}
+              disabled={syncing}
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={cn("h-4 w-4 text-gray-400", syncing && "animate-spin")} />
+              Re-categorize All Emails
+            </button>
+            <p className="text-[10px] text-gray-400 mt-2 text-center">Re-classifies all emails using current keywords</p>
+          </div>
         </div>
       </Modal>
     </div>

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { syncGmailEmails, syncGmailSentEmails } from "@/lib/email/gmail";
+import { categorizeEmail } from "@/lib/email/categorizer";
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -12,12 +13,38 @@ export async function POST(request: NextRequest) {
 
   const userId = (session.user as { id: string }).id;
 
-  let body: { accountId?: string; maxResults?: number } = {};
+  let body: { accountId?: string; maxResults?: number; customCategories?: Record<string, string[]>; recategorize?: boolean } = {};
   try {
     body = await request.json();
   } catch { /* empty body is ok */ }
 
-  // Find account(s) to sync
+  // Re-categorize existing emails with updated categories
+  if (body.recategorize && body.customCategories) {
+    const emailAccounts = await prisma.emailAccount.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    const accountIds = emailAccounts.map(a => a.id);
+
+    const emails = await prisma.email.findMany({
+      where: { emailAccountId: { in: accountIds } },
+      select: { id: true, subject: true, bodyText: true },
+    });
+
+    let updated = 0;
+    for (const email of emails) {
+      const newCategory = categorizeEmail(email.subject, email.bodyText, body.customCategories);
+      await prisma.email.update({
+        where: { id: email.id },
+        data: { category: newCategory },
+      });
+      updated++;
+    }
+
+    return NextResponse.json({ recategorized: updated });
+  }
+
+  // Normal sync
   const accounts = body.accountId
     ? await prisma.emailAccount.findMany({ where: { id: body.accountId, userId } })
     : await prisma.emailAccount.findMany({ where: { userId, accessToken: { not: null } } });
@@ -37,8 +64,8 @@ export async function POST(request: NextRequest) {
 
     if (account.provider === "GMAIL") {
       try {
-        const inbox = await syncGmailEmails(account.id, body.maxResults || 100);
-        const sent = await syncGmailSentEmails(account.id, body.maxResults || 100);
+        const inbox = await syncGmailEmails(account.id, body.maxResults || 100, body.customCategories);
+        const sent = await syncGmailSentEmails(account.id, body.maxResults || 100, body.customCategories);
         const synced = inbox + sent;
         totalSynced += synced;
         results.push({ email: account.email, synced });

@@ -182,7 +182,8 @@ function parseEmailAddresses(header: string): string[] {
 // Sync emails from Gmail
 export async function syncGmailEmails(
   emailAccountId: string,
-  maxResults: number = 100
+  maxResults: number = 100,
+  customCategories?: Record<string, string[]>
 ): Promise<number> {
   // Get list of message IDs
   const listRes = await gmailFetch(
@@ -217,7 +218,7 @@ export async function syncGmailEmails(
     const isRead = !message.labelIds.includes("UNREAD");
     const folder = message.labelIds.includes("SENT") ? "SENT" : "INBOX";
     const subject = getHeader(headers, "Subject");
-    const category = categorizeEmail(subject, text);
+    const category = categorizeEmail(subject, text, customCategories);
 
     try {
       await prisma.email.create({
@@ -259,7 +260,8 @@ export async function syncGmailEmails(
 // Sync sent emails
 export async function syncGmailSentEmails(
   emailAccountId: string,
-  maxResults: number = 100
+  maxResults: number = 100,
+  customCategories?: Record<string, string[]>
 ): Promise<number> {
   const listRes = await gmailFetch(
     emailAccountId,
@@ -289,7 +291,7 @@ export async function syncGmailSentEmails(
     const { text, html } = extractBody(message.payload);
     const attachments = extractAttachments(message.payload);
     const subject = getHeader(headers, "Subject");
-    const category = categorizeEmail(subject, text);
+    const category = categorizeEmail(subject, text, customCategories);
 
     try {
       await prisma.email.create({
