@@ -50,13 +50,24 @@ export async function syncOutlookEmails(
   maxResults: number = 100,
   customCategories?: Record<string, string[]>
 ): Promise<number> {
-  const res = await graphFetch(emailAccountId, `/messages?$top=${maxResults}&$orderby=receivedDateTime desc&$select=id,subject,from,toRecipients,ccRecipients,body,receivedDateTime,isRead,hasAttachments,parentFolderId`);
-  const data = await res.json();
+  // Sync inbox + sent (100 each = 200 total)
+  const [inboxRes, sentRes] = await Promise.all([
+    graphFetch(emailAccountId, `/mailFolders/inbox/messages?$top=${maxResults}&$orderby=receivedDateTime desc&$select=id,subject,from,toRecipients,ccRecipients,body,receivedDateTime,isRead,hasAttachments`),
+    graphFetch(emailAccountId, `/mailFolders/sentitems/messages?$top=${maxResults}&$orderby=receivedDateTime desc&$select=id,subject,from,toRecipients,ccRecipients,body,receivedDateTime,isRead,hasAttachments`),
+  ]);
 
-  if (!data.value) return 0;
+  const inboxData = await inboxRes.json();
+  const sentData = await sentRes.json();
+
+  const allMessages = [
+    ...((inboxData.value || []).map((m: Record<string, unknown>) => ({ ...m, _folder: "INBOX" }))),
+    ...((sentData.value || []).map((m: Record<string, unknown>) => ({ ...m, _folder: "SENT" }))),
+  ];
+
+  if (allMessages.length === 0) return 0;
 
   let synced = 0;
-  for (const msg of data.value) {
+  for (const msg of allMessages) {
     const existing = await prisma.email.findUnique({ where: { messageId: msg.id } });
     if (existing) continue;
 
@@ -66,7 +77,7 @@ export async function syncOutlookEmails(
     const subject = msg.subject || "";
     const bodyText = msg.body?.contentType === "text" ? msg.body.content : null;
     const bodyHtml = msg.body?.contentType === "html" ? msg.body.content : null;
-    const folder = msg.parentFolderId?.includes("SentItems") ? "SENT" : "INBOX";
+    const folder = msg._folder || "INBOX";
     const category = categorizeEmail(subject, bodyText || bodyHtml || "", customCategories);
 
     try {
