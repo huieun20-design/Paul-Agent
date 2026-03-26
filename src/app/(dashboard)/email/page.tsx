@@ -434,7 +434,7 @@ export default function EmailPage() {
         </div>
 
         {/* Category tabs — draggable */}
-        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-gray-200 px-4 py-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap border-b border-gray-200 px-4 py-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
@@ -460,7 +460,7 @@ export default function EmailPage() {
                 onDragEnd={() => setDragCat(null)}
                 onClick={() => setCategory(cat)}
                 className={cn(
-                  "whitespace-nowrap rounded-full px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-semibold transition-all",
+                  "whitespace-nowrap flex-shrink-0 rounded-full px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-semibold transition-all",
                   isDraggable && "cursor-grab active:cursor-grabbing",
                   dragCat === cat && "opacity-40 scale-95",
                   cat === "All"
