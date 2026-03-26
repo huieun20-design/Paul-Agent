@@ -45,3 +45,18 @@ next-env.d.ts
 # uploads
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# Prevent deleted modules from being recreated
+/src/app/page.tsx
+/src/app/(dashboard)/orders
+/src/app/(dashboard)/crm
+/src/app/(dashboard)/claims
+/src/app/(dashboard)/invoices
+/src/app/(dashboard)/payments
+/src/app/(dashboard)/banking
+/src/app/api/orders
+/src/app/api/claims
+/src/app/api/invoices
+/src/app/api/payments
+/src/app/api/banking
+/src/app/api/contacts
