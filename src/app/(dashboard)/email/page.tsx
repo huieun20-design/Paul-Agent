@@ -186,7 +186,7 @@ export default function EmailPage() {
       const res = await fetch("/api/email/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxResults: 50 }),
+        body: JSON.stringify({ maxResults: 100 }),
       });
       const data = await res.json();
       if (data.error) {

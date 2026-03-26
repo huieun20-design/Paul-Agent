@@ -181,7 +181,7 @@ function parseEmailAddresses(header: string): string[] {
 // Sync emails from Gmail
 export async function syncGmailEmails(
   emailAccountId: string,
-  maxResults: number = 50
+  maxResults: number = 100
 ): Promise<number> {
   // Get list of message IDs
   const listRes = await gmailFetch(
@@ -255,7 +255,7 @@ export async function syncGmailEmails(
 // Sync sent emails
 export async function syncGmailSentEmails(
   emailAccountId: string,
-  maxResults: number = 50
+  maxResults: number = 100
 ): Promise<number> {
   const listRes = await gmailFetch(
     emailAccountId,

@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
 
     if (account.provider === "GMAIL") {
       try {
-        const inbox = await syncGmailEmails(account.id, body.maxResults || 50);
-        const sent = await syncGmailSentEmails(account.id, body.maxResults || 50);
+        const inbox = await syncGmailEmails(account.id, body.maxResults || 100);
+        const sent = await syncGmailSentEmails(account.id, body.maxResults || 100);
         const synced = inbox + sent;
         totalSynced += synced;
         results.push({ email: account.email, synced });
