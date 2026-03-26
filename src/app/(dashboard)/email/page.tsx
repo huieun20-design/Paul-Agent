@@ -173,6 +173,16 @@ export default function EmailPage() {
   useEffect(() => {
     fetchEmails();
     fetchAccounts();
+
+    // If redirected from OAuth callback, refetch after a short delay
+    if (typeof window !== "undefined" && window.location.search.includes("connected=true")) {
+      setTimeout(() => {
+        fetchAccounts();
+        fetchEmails();
+      }, 1000);
+      // Clean URL
+      window.history.replaceState({}, "", "/email");
+    }
   }, [fetchEmails, fetchAccounts]);
 
   // Auto-sync on first load if accounts exist but no emails
@@ -790,7 +800,7 @@ export default function EmailPage() {
       {showCompose && <ComposeModal onClose={() => setShowCompose(false)} />}
 
       {/* Accounts Modal */}
-      <Modal isOpen={showAccounts} onClose={() => setShowAccounts(false)} title="Email Accounts" size="md">
+      <Modal isOpen={showAccounts} onClose={() => { setShowAccounts(false); fetchAccounts(); fetchEmails(); }} title="Email Accounts" size="md">
         <AccountsManager accounts={emailAccounts} onRefresh={fetchAccounts} />
       </Modal>
     </div>
