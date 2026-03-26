@@ -1084,18 +1084,42 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
     if (mode === "forward" && !forwardTo.trim()) { alert("Enter recipient email"); return; }
     setSending(true);
     try {
+      // Split files: small (<3MB) as Gmail attachment, large as Supabase link
+      const LIMIT = 3 * 1024 * 1024; // 3MB
+      const smallFiles = attachments.filter(f => f.size <= LIMIT);
+      const largeFiles = attachments.filter(f => f.size > LIMIT);
+
+      // Upload large files to Supabase Storage and get links
+      let linkHtml = "";
+      if (largeFiles.length > 0) {
+        const uploadResults = await Promise.all(largeFiles.map(async (file) => {
+          const form = new FormData();
+          form.append("file", file);
+          const res = await fetch("/api/email/upload-attachment", { method: "POST", body: form });
+          return res.json();
+        }));
+        const links = uploadResults.filter(r => r.url);
+        if (links.length > 0) {
+          linkHtml = '<br><br><div style="padding:12px;background:#f5f5f5;border-radius:8px;font-size:13px"><b>Attached Files:</b><br>' +
+            links.map(l => `<a href="${l.url}" target="_blank" style="color:#2563eb">${l.name} (${(l.size / 1024 / 1024).toFixed(1)}MB)</a>`).join("<br>") +
+            "</div>";
+        }
+      }
+
+      const finalBody = content + linkHtml;
+
       const formData = new FormData();
       formData.append("accountId", selectedAccountId);
       formData.append("to", mode === "reply" ? email.from.replace(/.*<(.+)>.*/, "$1") : forwardTo);
       formData.append("bcc", bcc);
       formData.append("cc", "");
       formData.append("subject", `${mode === "reply" ? "Re" : "Fwd"}: ${email.subject}`);
-      formData.append("body", content);
+      formData.append("body", finalBody);
       if (mode === "reply") {
         formData.append("inReplyTo", email.messageId);
         if (email.threadId) formData.append("threadId", email.threadId);
       }
-      attachments.forEach(file => formData.append("attachments", file));
+      smallFiles.forEach(file => formData.append("attachments", file));
 
       const res = await fetch("/api/email/send", { method: "POST", body: formData });
       const data = await res.json();
@@ -1290,14 +1314,19 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
         {/* Attachments */}
         {attachments.length > 0 && (
           <div className="px-6 pb-3 flex flex-wrap gap-2">
-            {attachments.map((file, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-200 px-2.5 py-1.5">
-                <Paperclip className="h-3 w-3 text-gray-400" />
-                <span className="text-xs text-gray-600 max-w-40 truncate">{file.name}</span>
-                <span className="text-[10px] text-gray-400">{(file.size / 1024).toFixed(0)}KB</span>
-                <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
-              </div>
-            ))}
+            {attachments.map((file, i) => {
+              const isLarge = file.size > 3 * 1024 * 1024;
+              const sizeStr = file.size > 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(1)}MB` : `${(file.size / 1024).toFixed(0)}KB`;
+              return (
+                <div key={i} className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", isLarge ? "bg-amber-50 border-amber-200" : "bg-gray-50 border-gray-200")}>
+                  <Paperclip className="h-3 w-3 text-gray-400" />
+                  <span className="text-xs text-gray-600 max-w-40 truncate">{file.name}</span>
+                  <span className="text-[10px] text-gray-400">{sizeStr}</span>
+                  {isLarge && <span className="text-[9px] text-amber-600 font-medium">link</span>}
+                  <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
+                </div>
+              );
+            })}
           </div>
         )}
 
