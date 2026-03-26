@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, unauthorized } from "@/lib/api-helpers";
 import { syncGmailEmails, syncGmailSentEmails } from "@/lib/email/gmail";
+import { syncOutlookEmails } from "@/lib/email/outlook";
 import { categorizeEmail } from "@/lib/email/categorizer";
 
 export async function POST(request: NextRequest) {
@@ -59,20 +60,24 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    if (account.provider === "GMAIL") {
-      try {
+    try {
+      let synced = 0;
+      if (account.provider === "GMAIL") {
         const inbox = await syncGmailEmails(account.id, body.maxResults || 100, body.customCategories);
         const sent = await syncGmailSentEmails(account.id, body.maxResults || 100, body.customCategories);
-        const synced = inbox + sent;
-        totalSynced += synced;
-        results.push({ email: account.email, synced });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        console.error(`Sync failed for ${account.email}:`, message);
-        results.push({ email: account.email, error: message });
+        synced = inbox + sent;
+      } else if (account.provider === "OUTLOOK") {
+        synced = await syncOutlookEmails(account.id, body.maxResults || 100, body.customCategories);
+      } else {
+        results.push({ email: account.email, error: `Provider ${account.provider} not supported` });
+        continue;
       }
-    } else {
-      results.push({ email: account.email, error: `Provider ${account.provider} not supported` });
+      totalSynced += synced;
+      results.push({ email: account.email, synced });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`Sync failed for ${account.email}:`, message);
+      results.push({ email: account.email, error: message });
     }
   }
 

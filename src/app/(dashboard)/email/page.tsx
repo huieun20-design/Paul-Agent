@@ -1519,7 +1519,7 @@ function AccountsManager({ accounts, onRefresh }: { accounts: { id: string; emai
           </div>
           <Plus className="h-4 w-4 text-gray-400" />
         </button>
-        <button onClick={() => { setShowAdd(true); setForm({ provider: "OUTLOOK", email: "" }); }} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+        <button onClick={() => { window.location.href = "/api/email/connect/outlook"; }} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
           {providerIcons.OUTLOOK}
           <div className="flex-1 text-left">
             <p className="text-sm font-medium text-gray-900">Outlook / Microsoft</p>
