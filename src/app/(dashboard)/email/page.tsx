@@ -355,7 +355,7 @@ export default function EmailPage() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-3rem)] -mx-4 -mt-4 md:mx-auto md:mt-0 md:max-w-[1300px] rounded-none md:rounded-2xl overflow-hidden card">
+    <div className="flex h-[calc(100dvh-5.5rem)] md:h-[calc(100vh-3rem)] -mx-4 -mt-4 -mb-20 md:mb-0 md:mx-auto md:mt-0 md:max-w-[1300px] rounded-none md:rounded-2xl overflow-hidden card">
       {/* Left Panel — Email List */}
       <div
         className={cn(
