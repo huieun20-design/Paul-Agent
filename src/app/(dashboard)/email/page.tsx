@@ -812,7 +812,7 @@ export default function EmailPage() {
                     `/api/email/${selectedEmail.id}/attachment?attachmentId=${attId}`
                   );
                   return <iframe
-                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="script-src 'none'"><base target="_blank"><style>body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6;overflow-x:hidden}img{max-width:100%!important;height:auto!important}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${html}</body></html>`}
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="script-src 'none'"><base target="_blank"><style>body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6;overflow-x:hidden}img{max-width:100%!important;height:auto!important;min-width:60px!important;min-height:60px!important}img[style*="40px"]{width:80px!important;height:80px!important}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${html}</body></html>`}
                     className="w-full border-0"
                     style={{ minHeight: "200px" }}
                     onLoad={(e) => {
