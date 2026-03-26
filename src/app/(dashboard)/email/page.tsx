@@ -190,19 +190,12 @@ export default function EmailPage() {
     setLoading(false);
   }, [folder, search, category, filterAccount]);
 
-  const fetchAccounts = useCallback(async (retry = 0) => {
+  const fetchAccounts = useCallback(async () => {
     try {
       const res = await fetch("/api/email/accounts");
-      if (res.status === 401 && retry < 2) {
-        // Session might not be ready yet, retry
-        await new Promise(r => setTimeout(r, 1500));
-        return fetchAccounts(retry + 1);
-      }
       const data = await res.json();
       if (Array.isArray(data)) setEmailAccounts(data);
     } catch {
-      if (retry < 2) {
-        await new Promise(r => setTimeout(r, 1500));
         return fetchAccounts(retry + 1);
       }
     }
