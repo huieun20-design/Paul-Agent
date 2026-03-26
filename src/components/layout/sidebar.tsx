@@ -33,7 +33,7 @@ export function Sidebar() {
       {/* Desktop — left sidebar */}
       <aside className="hidden md:flex h-screen w-16 flex-col items-center bg-white border-r border-gray-200 py-4">
         <div className="mb-6">
-          <span className="text-lg font-black text-gray-900 tracking-tight">PAUL</span>
+          <img src="/icons/icon-192.svg" alt="Hey, Paul!" className="h-10 w-10 rounded-xl" />
         </div>
         <nav className="flex-1 flex flex-col items-center gap-1">
           {navigation.map((item) => {
