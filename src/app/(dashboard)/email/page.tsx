@@ -437,7 +437,7 @@ export default function EmailPage() {
         </div>
 
         {/* Category tabs — draggable */}
-        <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-4 py-2">
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-gray-200 px-4 py-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;

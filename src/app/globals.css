@@ -24,6 +24,10 @@ body {
 @keyframes progressFill { from { width: 0; } }
 .progress-animated { animation: progressFill 1s ease-out; }
 
+/* Hide scrollbar but allow scroll */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 /* Rich text editor placeholder */
 [contenteditable]:empty:before {
   content: attr(data-placeholder);
