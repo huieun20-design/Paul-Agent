@@ -1048,9 +1048,11 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
   emailAccounts: { id: string; email: string }[];
 }) {
   const [forwardTo, setForwardTo] = useState("");
+  const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
   const [sending, setSending] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState(() => {
     const match = emailAccounts.find(a => email.to.some(t => t.toLowerCase().includes(a.email.toLowerCase())));
@@ -1111,8 +1113,8 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
       const formData = new FormData();
       formData.append("accountId", selectedAccountId);
       formData.append("to", mode === "reply" ? email.from.replace(/.*<(.+)>.*/, "$1") : forwardTo);
+      formData.append("cc", cc);
       formData.append("bcc", bcc);
-      formData.append("cc", "");
       formData.append("subject", `${mode === "reply" ? "Re" : "Fwd"}: ${email.subject}`);
       formData.append("body", finalBody);
       if (mode === "reply") {
@@ -1184,18 +1186,25 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
               </div>
             )}
           </div>
+          {showCc && (
+            <div className="flex items-center py-1.5 border-b border-gray-100">
+              <span className="text-sm text-gray-400 w-14">Cc:</span>
+              <input type="text" value={cc} onChange={e => setCc(e.target.value)} placeholder="Comma separated emails..." className={fieldClass} />
+            </div>
+          )}
           {showBcc && (
             <div className="flex items-center py-1.5 border-b border-gray-100">
               <span className="text-sm text-gray-400 w-14">Bcc:</span>
-              <input type="text" value={bcc} onChange={e => setBcc(e.target.value)} placeholder="Type name or email..." className={fieldClass} />
+              <input type="text" value={bcc} onChange={e => setBcc(e.target.value)} placeholder="Comma separated emails..." className={fieldClass} />
             </div>
           )}
           <div className="flex items-center py-1.5 border-b border-gray-100">
             <span className="text-sm text-gray-400 w-14">Subject:</span>
-            <span className="text-sm text-gray-800">{mode === "reply" ? "Re" : "Fwd"}: {email.subject}</span>
-            {!showBcc && (
-              <button onClick={() => setShowBcc(true)} className="ml-auto text-xs text-gray-400 hover:text-gray-600">Bcc</button>
-            )}
+            <span className="flex-1 text-sm text-gray-800">{mode === "reply" ? "Re" : "Fwd"}: {email.subject}</span>
+            <div className="flex gap-2 ml-2">
+              {!showCc && <button onClick={() => setShowCc(true)} className="text-xs text-gray-400 hover:text-gray-600">Cc</button>}
+              {!showBcc && <button onClick={() => setShowBcc(true)} className="text-xs text-gray-400 hover:text-gray-600">Bcc</button>}
+            </div>
           </div>
           <div className="flex items-center py-1.5 border-b border-gray-100">
             <span className="text-sm text-gray-400 w-14">From:</span>
