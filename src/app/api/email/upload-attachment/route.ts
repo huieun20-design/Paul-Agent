@@ -1,16 +1,17 @@
+import { getAuthUser } from "@/lib/api-helpers";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { getSupabase } from "@/lib/supabase";
 
 // POST — Upload large attachment to Supabase Storage, return public URL
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const _user = await getAuthUser();
+  if (!_user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as { id: string }).id;
+  const userId = _user!.id;
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
 

@@ -1,16 +1,17 @@
+import { getAuthUser } from "@/lib/api-helpers";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/prisma";
 
 // POST /api/email/send — Send email (supports attachments via FormData)
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const _user = await getAuthUser();
+  if (!_user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as { id: string }).id;
+  const userId = _user!.id;
   const contentType = request.headers.get("content-type") || "";
 
   let accountId: string, to: string[], cc: string[], bcc: string[], subject: string, body: string;

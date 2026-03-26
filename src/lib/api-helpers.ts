@@ -1,42 +1,23 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { getToken } from "next-auth/jwt";
-import { headers, cookies } from "next/headers";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+// Single-user app — always return the user, never fail auth
+let cachedUserId: string | null = null;
+
 export async function getAuthUser() {
-  // Try getServerSession first
-  try {
-    const session = await getServerSession(authOptions);
-    if (session?.user) {
-      return session.user as { id: string; name?: string; email?: string };
-    }
-  } catch { /* fall through */ }
+  // Use cached userId if available
+  if (cachedUserId) {
+    return { id: cachedUserId, name: "Paul", email: "admin@paulagent.local" };
+  }
 
-  // Fallback: read JWT token directly
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("next-auth.session-token")?.value
-      || cookieStore.get("__Secure-next-auth.session-token")?.value;
-
-    if (token) {
-      const jwt = await import("next-auth/jwt");
-      const decoded = await jwt.decode({
-        token,
-        secret: process.env.NEXTAUTH_SECRET || "change-this",
-      });
-      if (decoded?.id) {
-        return { id: decoded.id as string, name: decoded.name as string, email: decoded.email as string };
-      }
-    }
-  } catch { /* fall through */ }
-
-  // Final fallback: single-user app — get the only user
+  // Get user from DB (single user app)
   try {
     const user = await prisma.user.findFirst({ select: { id: true, name: true, email: true } });
-    if (user) return user;
-  } catch { /* fall through */ }
+    if (user) {
+      cachedUserId = user.id;
+      return user;
+    }
+  } catch { /* DB error */ }
 
   return null;
 }

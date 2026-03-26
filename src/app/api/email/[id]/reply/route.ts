@@ -1,6 +1,7 @@
+import { getAuthUser } from "@/lib/api-helpers";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/prisma";
 import { generateReply } from "@/lib/ai/email-analyzer";
 
@@ -9,8 +10,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const _user = await getAuthUser();
+  if (!_user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

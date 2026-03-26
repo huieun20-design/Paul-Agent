@@ -1,6 +1,7 @@
+import { getAuthUser } from "@/lib/api-helpers";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/prisma";
 
 // DELETE /api/email/accounts/[id] — Disconnect email account
@@ -8,12 +9,12 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const _user = await getAuthUser();
+  if (!_user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = (session.user as { id: string }).id;
+  const userId = _user!.id;
   const { id } = await params;
 
   // Verify ownership

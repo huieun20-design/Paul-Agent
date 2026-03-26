@@ -1,6 +1,7 @@
+import { getAuthUser } from "@/lib/api-helpers";
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+
+
 import { prisma } from "@/lib/prisma";
 
 // GET /api/email/[id]/attachment?attachmentId=xxx&messageId=yyy
@@ -9,8 +10,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  const _user = await getAuthUser();
+  if (!_user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
