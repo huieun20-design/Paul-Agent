@@ -1,20 +1,15 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser } from "@/lib/api-helpers";
 
-export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.redirect(new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000"));
-  }
+export async function GET(request: NextRequest) {
+  const user = await getAuthUser();
+  const baseUrl = process.env.NEXTAUTH_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+
+  if (!user) return NextResponse.redirect(new URL("/login", baseUrl));
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
-    return NextResponse.json({ error: "Google OAuth not configured" }, { status: 500 });
-  }
+  if (!clientId) return NextResponse.json({ error: "Google OAuth not configured" }, { status: 500 });
 
-  const userId = (session.user as { id: string }).id;
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const redirectUri = `${baseUrl}/api/email/connect/google/callback`;
 
   const scopes = [
@@ -31,7 +26,7 @@ export async function GET() {
     scope: scopes,
     access_type: "offline",
     prompt: "consent",
-    state: userId, // Pass userId so callback doesn't need session
+    state: user.id,
   });
 
   return NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);

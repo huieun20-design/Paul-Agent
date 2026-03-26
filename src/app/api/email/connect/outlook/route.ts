@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/api-helpers";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await getAuthUser();
-  if (!user) return NextResponse.redirect(new URL("/login", process.env.NEXTAUTH_URL || "http://localhost:3000"));
+  const baseUrl = process.env.NEXTAUTH_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`;
+
+  if (!user) return NextResponse.redirect(new URL("/login", baseUrl));
 
   const clientId = process.env.MICROSOFT_CLIENT_ID;
   if (!clientId) return NextResponse.json({ error: "Microsoft OAuth not configured" }, { status: 500 });
 
-  const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const redirectUri = `${baseUrl}/api/email/connect/outlook/callback`;
 
   const scopes = [
