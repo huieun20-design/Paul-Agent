@@ -1145,32 +1145,91 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
           </div>
         </div>
 
-        {/* Toolbar — Apple Mail style */}
-        <div className="flex items-center gap-0.5 px-6 py-1.5 border-b border-gray-100 bg-gray-50/50">
-          {/* AI buttons first */}
+        {/* Toolbar — Gmail style */}
+        <div className="flex flex-wrap items-center gap-0.5 px-4 py-1 border-b border-gray-100 bg-gray-50/50">
+          {/* AI tone */}
           {["friendly", "formal", "firm", "negotiation"].map(tone => (
             <button key={tone} onClick={() => onGenerateReply(tone)} disabled={generatingReply}
-              className="flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1.5 text-[11px] font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 mr-0.5">
-              <Sparkles className="h-3 w-3" />{tone}
+              className="flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-[10px] font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50">
+              <Sparkles className="h-2.5 w-2.5" />{tone}
             </button>
           ))}
-          <div className="w-px h-5 bg-gray-200 mx-2" />
-          {/* Format buttons */}
-          <button onClick={() => exec("bold")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 font-bold text-sm" title="Bold">B</button>
-          <button onClick={() => exec("italic")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 italic text-sm" title="Italic">I</button>
-          <button onClick={() => exec("underline")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 underline text-sm" title="Underline">U</button>
-          <button onClick={() => exec("strikeThrough")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 line-through text-sm" title="Strikethrough">S</button>
+          <div className="w-px h-5 bg-gray-200 mx-1.5" />
+
+          {/* Font family */}
+          <select onChange={e => exec("fontName", e.target.value)} defaultValue=""
+            className="h-7 rounded border border-gray-200 bg-white px-1 text-[11px] text-gray-600 focus:outline-none w-24" title="Font">
+            <option value="" disabled>Font</option>
+            <option value="Arial" style={{fontFamily:"Arial"}}>Arial</option>
+            <option value="Helvetica" style={{fontFamily:"Helvetica"}}>Helvetica</option>
+            <option value="Georgia" style={{fontFamily:"Georgia"}}>Georgia</option>
+            <option value="Times New Roman" style={{fontFamily:"Times New Roman"}}>Times</option>
+            <option value="Courier New" style={{fontFamily:"Courier New"}}>Courier</option>
+            <option value="Verdana" style={{fontFamily:"Verdana"}}>Verdana</option>
+            <option value="Trebuchet MS" style={{fontFamily:"Trebuchet MS"}}>Trebuchet</option>
+          </select>
+
+          {/* Font size */}
+          <select onChange={e => exec("fontSize", e.target.value)} defaultValue=""
+            className="h-7 rounded border border-gray-200 bg-white px-1 text-[11px] text-gray-600 focus:outline-none w-14" title="Size">
+            <option value="" disabled>Size</option>
+            <option value="1">Small</option>
+            <option value="2">Normal</option>
+            <option value="3">Medium</option>
+            <option value="4">Large</option>
+            <option value="5">Huge</option>
+          </select>
           <div className="w-px h-5 bg-gray-200 mx-1" />
-          <button onClick={() => exec("justifyLeft")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs" title="Align left">≡</button>
-          <button onClick={() => exec("justifyCenter")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs" title="Align center">≡</button>
-          <button onClick={() => exec("justifyRight")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs" title="Align right">≡</button>
+
+          {/* Bold / Italic / Underline / Strike */}
+          <button onClick={() => exec("bold")} className="rounded w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 font-bold text-xs" title="Bold (Ctrl+B)">B</button>
+          <button onClick={() => exec("italic")} className="rounded w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 italic text-xs" title="Italic (Ctrl+I)">I</button>
+          <button onClick={() => exec("underline")} className="rounded w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 underline text-xs" title="Underline (Ctrl+U)">U</button>
+          <button onClick={() => exec("strikeThrough")} className="rounded w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 line-through text-xs" title="Strikethrough">S</button>
           <div className="w-px h-5 bg-gray-200 mx-1" />
-          <button onClick={() => exec("insertUnorderedList")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs" title="Bullet list">•≡</button>
-          <button onClick={() => exec("insertOrderedList")} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs" title="Number list">1≡</button>
+
+          {/* Text color */}
+          <div className="relative" title="Text color">
+            <input type="color" onChange={e => exec("foreColor", e.target.value)} className="absolute inset-0 w-7 h-7 opacity-0 cursor-pointer" />
+            <div className="rounded w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs font-bold">A<div className="h-0.5 w-3.5 bg-red-500 -mt-0.5" /></div>
+          </div>
+
+          {/* Background color */}
+          <div className="relative" title="Highlight color">
+            <input type="color" defaultValue="#ffff00" onChange={e => exec("hiliteColor", e.target.value)} className="absolute inset-0 w-7 h-7 opacity-0 cursor-pointer" />
+            <div className="rounded w-7 h-7 flex items-center justify-center hover:bg-gray-200 text-xs font-bold"><span className="bg-yellow-200 px-1">A</span></div>
+          </div>
           <div className="w-px h-5 bg-gray-200 mx-1" />
-          <button onClick={handleLink} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 text-xs" title="Insert link">🔗</button>
-          <button onClick={() => fileInputRef.current?.click()} className="rounded-lg w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200" title="Attach file">
-            <Paperclip className="h-4 w-4" />
+
+          {/* Alignment */}
+          <button onClick={() => exec("justifyLeft")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200" title="Align left"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M2 3h12v1H2zm0 3h8v1H2zm0 3h12v1H2zm0 3h8v1H2z"/></svg></button>
+          <button onClick={() => exec("justifyCenter")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200" title="Align center"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M2 3h12v1H2zm2 3h8v1H4zm-2 3h12v1H2zm2 3h8v1H4z"/></svg></button>
+          <button onClick={() => exec("justifyRight")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200" title="Align right"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M2 3h12v1H2zm4 3h8v1H6zm-4 3h12v1H2zm4 3h8v1H6z"/></svg></button>
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          {/* Lists */}
+          <button onClick={() => exec("insertUnorderedList")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200" title="Bullet list"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><circle cx="2" cy="4" r="1.5"/><path d="M5 3h10v1H5zm0 4h10v1H5zm0 4h10v1H5z"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="12" r="1.5"/></svg></button>
+          <button onClick={() => exec("insertOrderedList")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200" title="Numbered list"><svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><path d="M5 3h10v1H5zm0 4h10v1H5zm0 4h10v1H5z"/><text x="1" y="5" fontSize="5" fontWeight="bold">1</text><text x="1" y="9" fontSize="5" fontWeight="bold">2</text><text x="1" y="13" fontSize="5" fontWeight="bold">3</text></svg></button>
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          {/* Indent */}
+          <button onClick={() => exec("indent")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Indent">→≡</button>
+          <button onClick={() => exec("outdent")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Outdent">←≡</button>
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          {/* Quote */}
+          <button onClick={() => exec("formatBlock", "blockquote")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Quote">❝</button>
+
+          {/* Link */}
+          <button onClick={handleLink} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Insert link">🔗</button>
+
+          {/* Remove formatting */}
+          <button onClick={() => exec("removeFormat")} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Clear formatting">T̸</button>
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          {/* Attach */}
+          <button onClick={() => fileInputRef.current?.click()} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200" title="Attach file">
+            <Paperclip className="h-3.5 w-3.5" />
           </button>
           <input ref={fileInputRef} type="file" multiple className="hidden"
             onChange={e => { if (e.target.files) setAttachments(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
