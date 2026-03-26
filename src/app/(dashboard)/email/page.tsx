@@ -160,6 +160,7 @@ export default function EmailPage() {
   const [showCategoryEdit, setShowCategoryEdit] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryKeywords, setCategoryKeywords] = useState<Record<string, string[]>>({});
+  const [dragCat, setDragCat] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -423,17 +424,36 @@ export default function EmailPage() {
           </div>
         </div>
 
-        {/* Category tabs */}
+        {/* Category tabs — draggable */}
         <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-4 py-2">
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
+            const isDraggable = cat !== "All";
             return (
               <button
                 key={cat}
+                draggable={isDraggable}
+                onDragStart={() => isDraggable && setDragCat(cat)}
+                onDragOver={(e) => { if (isDraggable && dragCat && dragCat !== cat) e.preventDefault(); }}
+                onDrop={() => {
+                  if (!dragCat || dragCat === cat || cat === "All") return;
+                  const fromIdx = categories.indexOf(dragCat);
+                  const toIdx = categories.indexOf(cat);
+                  if (fromIdx === -1 || toIdx === -1) return;
+                  const updated = [...categories];
+                  updated.splice(fromIdx, 1);
+                  updated.splice(toIdx, 0, dragCat);
+                  setCategories(updated);
+                  localStorage.setItem("emailCategories", JSON.stringify(updated));
+                  setDragCat(null);
+                }}
+                onDragEnd={() => setDragCat(null)}
                 onClick={() => setCategory(cat)}
                 className={cn(
-                  "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                  "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all",
+                  isDraggable && "cursor-grab active:cursor-grabbing",
+                  dragCat === cat && "opacity-40 scale-95",
                   cat === "All"
                     ? isActive ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                     : isActive ? (style?.active || "bg-gray-300 text-gray-800") : `${style?.bg || "bg-gray-50"} ${style?.text || "text-gray-500"} hover:opacity-80`
@@ -813,60 +833,17 @@ export default function EmailPage() {
             </div>
 
             {/* Reply/Forward Section */}
-            {replyMode && (
-              <div className="border-t border-gray-200 px-6 py-4">
-                <div className="rounded-xl border border-gray-200 p-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      {replyMode === "reply" ? "Reply" : "Forward"}
-                    </span>
-                    <div className="flex gap-2">
-                      {["friendly", "formal", "firm", "negotiation"].map(
-                        (tone) => (
-                          <button
-                            key={tone}
-                            onClick={() =>
-                              handleGenerateReply(selectedEmail.id, tone)
-                            }
-                            disabled={generatingReply}
-                            className="flex items-center gap-1 rounded-lg bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50"
-                          >
-                            <Sparkles className="h-3 w-3" />
-                            {tone}
-                          </button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                  <textarea
-                    value={aiReply}
-                    onChange={(e) => setAiReply(e.target.value)}
-                    rows={6}
-                    placeholder={
-                      generatingReply
-                        ? "Generating AI reply..."
-                        : "Write your reply or click an AI tone above..."
-                    }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
-                  />
-                  <div className="mt-3 flex justify-end gap-2">
-                    <button
-                      onClick={() => {
-                        setReplyMode(null);
-                        setAiReply("");
-                      }}
-                      className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
-                    >
-                      Cancel
-                    </button>
-                    <button className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800">
-                      <Send className="h-4 w-4" />
-                      Send
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {replyMode && <ReplySection
+              email={selectedEmail}
+              mode={replyMode}
+              aiReply={aiReply}
+              setAiReply={setAiReply}
+              generatingReply={generatingReply}
+              onGenerateReply={(tone) => handleGenerateReply(selectedEmail.id, tone)}
+              onCancel={() => { setReplyMode(null); setAiReply(""); }}
+              onSent={() => { setReplyMode(null); setAiReply(""); }}
+              emailAccounts={emailAccounts}
+            />}
           </div>
         </div>
       )}
@@ -971,6 +948,86 @@ export default function EmailPage() {
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGenerateReply, onCancel, onSent, emailAccounts }: {
+  email: Email; mode: "reply" | "forward"; aiReply: string; setAiReply: (v: string) => void;
+  generatingReply: boolean; onGenerateReply: (tone: string) => void; onCancel: () => void; onSent: () => void;
+  emailAccounts: { id: string; email: string }[];
+}) {
+  const [forwardTo, setForwardTo] = useState("");
+  const [sending, setSending] = useState(false);
+
+  // Find which account received this email
+  const fromAccount = emailAccounts.find(a => email.to.some(t => t.toLowerCase().includes(a.email.toLowerCase())));
+  const replyTo = mode === "reply" ? email.from : forwardTo;
+
+  const handleSend = async () => {
+    if (!aiReply.trim()) return;
+    if (mode === "forward" && !forwardTo.trim()) { alert("Enter recipient email"); return; }
+    setSending(true);
+    try {
+      await fetch("/api/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: fromAccount?.id || emailAccounts[0]?.id,
+          to: [mode === "reply" ? email.from.replace(/.*<(.+)>.*/, "$1") : forwardTo],
+          subject: `${mode === "reply" ? "Re" : "Fwd"}: ${email.subject}`,
+          body: aiReply,
+          ...(mode === "reply" && { inReplyTo: email.messageId, threadId: email.threadId }),
+        }),
+      });
+      onSent();
+    } catch {
+      alert("Failed to send");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-gray-200 px-6 py-4">
+      <div className="rounded-xl border border-gray-200 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">{mode === "reply" ? "Reply" : "Forward"}</span>
+            {mode === "reply" && <span className="text-xs text-gray-400">to {email.from}</span>}
+          </div>
+          <div className="flex gap-1.5">
+            {["friendly", "formal", "firm", "negotiation"].map(tone => (
+              <button key={tone} onClick={() => onGenerateReply(tone)} disabled={generatingReply}
+                className="flex items-center gap-1 rounded-lg bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50">
+                <Sparkles className="h-3 w-3" />{tone}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {mode === "forward" && (
+          <input type="email" placeholder="Recipient email..." value={forwardTo} onChange={e => setForwardTo(e.target.value)}
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm mb-3 focus:border-gray-400 focus:outline-none" />
+        )}
+
+        <textarea value={aiReply} onChange={e => setAiReply(e.target.value)} rows={6}
+          placeholder={generatingReply ? "Generating AI reply..." : "Write your reply or click an AI tone above..."}
+          className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm focus:border-gray-400 focus:outline-none" />
+
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-gray-400">
+            {fromAccount ? `Sending from ${fromAccount.email}` : emailAccounts.length > 0 ? `Sending from ${emailAccounts[0].email}` : "No account connected"}
+          </span>
+          <div className="flex gap-2">
+            <button onClick={onCancel} className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Cancel</button>
+            <button onClick={handleSend} disabled={sending || !aiReply.trim()}
+              className="flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50">
+              <Send className="h-4 w-4" />{sending ? "Sending..." : "Send"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
