@@ -41,6 +41,7 @@ interface Email {
   extractedData: Record<string, unknown> | null;
   suggestedActions: Record<string, unknown>[] | null;
   attachments: { id: string; filename: string; mimeType: string; size: number }[];
+  emailAccount?: { id: string; email: string; provider: string };
 }
 
 interface EmailAnalysis {
@@ -129,6 +130,7 @@ export default function EmailPage() {
   const [folder, setFolder] = useState("INBOX");
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
+  const [filterAccount, setFilterAccount] = useState("all");
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -147,6 +149,7 @@ export default function EmailPage() {
       const params = new URLSearchParams({ folder });
       if (search) params.set("search", search);
       if (category !== "All") params.set("category", category);
+      if (filterAccount !== "all") params.set("accountId", filterAccount);
 
       const res = await fetch(`/api/email?${params}`);
       const data = await res.json();
@@ -156,7 +159,7 @@ export default function EmailPage() {
     } finally {
       setLoading(false);
     }
-  }, [folder, search, category]);
+  }, [folder, search, category, filterAccount]);
 
   const fetchAccounts = useCallback(async () => {
     try {
@@ -316,6 +319,20 @@ export default function EmailPage() {
             ))}
           </div>
 
+          {/* Account filter */}
+          {emailAccounts.length > 1 && (
+            <select
+              value={filterAccount}
+              onChange={(e) => setFilterAccount(e.target.value)}
+              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 focus:outline-none"
+            >
+              <option value="all">All Accounts</option>
+              {emailAccounts.map(acc => (
+                <option key={acc.id} value={acc.id}>{acc.email}</option>
+              ))}
+            </select>
+          )}
+
           <div className="flex-1" />
 
           <button
@@ -450,6 +467,11 @@ export default function EmailPage() {
                   <span className="flex-1 truncate text-xs text-gray-400">
                     {email.bodyText?.substring(0, 80) || ""}
                   </span>
+                  {email.emailAccount && emailAccounts.length > 1 && (
+                    <span className="flex-shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                      {email.emailAccount.email.split("@")[0]}
+                    </span>
+                  )}
                   {email.category && (
                     <span
                       className={cn(

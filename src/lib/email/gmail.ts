@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { categorizeEmail } from "./categorizer";
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -215,6 +216,8 @@ export async function syncGmailEmails(
     const attachments = extractAttachments(message.payload);
     const isRead = !message.labelIds.includes("UNREAD");
     const folder = message.labelIds.includes("SENT") ? "SENT" : "INBOX";
+    const subject = getHeader(headers, "Subject");
+    const category = categorizeEmail(subject, text);
 
     try {
       await prisma.email.create({
@@ -226,12 +229,13 @@ export async function syncGmailEmails(
           to: parseEmailAddresses(getHeader(headers, "To")),
           cc: parseEmailAddresses(getHeader(headers, "Cc")),
           bcc: parseEmailAddresses(getHeader(headers, "Bcc")),
-          subject: getHeader(headers, "Subject"),
+          subject,
           bodyText: text,
           bodyHtml: html,
           date: new Date(parseInt(message.internalDate)),
           isRead,
           folder: folder as "INBOX" | "SENT",
+          category,
           hasAttachments: attachments.length > 0,
           attachments: {
             create: attachments.map((att) => ({
@@ -284,6 +288,8 @@ export async function syncGmailSentEmails(
     const headers = message.payload.headers;
     const { text, html } = extractBody(message.payload);
     const attachments = extractAttachments(message.payload);
+    const subject = getHeader(headers, "Subject");
+    const category = categorizeEmail(subject, text);
 
     try {
       await prisma.email.create({
@@ -295,12 +301,13 @@ export async function syncGmailSentEmails(
           to: parseEmailAddresses(getHeader(headers, "To")),
           cc: parseEmailAddresses(getHeader(headers, "Cc")),
           bcc: [],
-          subject: getHeader(headers, "Subject"),
+          subject,
           bodyText: text,
           bodyHtml: html,
           date: new Date(parseInt(message.internalDate)),
           isRead: true,
           folder: "SENT",
+          category,
           hasAttachments: attachments.length > 0,
           attachments: {
             create: attachments.map((att) => ({

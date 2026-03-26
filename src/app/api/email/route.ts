@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "50");
   const accountId = searchParams.get("accountId") || "";
 
-  // Get user's email accounts
   const emailAccounts = await prisma.emailAccount.findMany({
     where: { userId },
     select: { id: true },
@@ -50,6 +49,7 @@ export async function GET(request: NextRequest) {
       take: limit,
       include: {
         attachments: { select: { id: true, filename: true, mimeType: true, size: true } },
+        emailAccount: { select: { id: true, email: true, provider: true } },
       },
     }),
     prisma.email.count({ where }),
