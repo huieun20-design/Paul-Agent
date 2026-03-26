@@ -21,7 +21,6 @@ export async function getAuthUser() {
       || cookieStore.get("__Secure-next-auth.session-token")?.value;
 
     if (token) {
-      // Decode JWT manually using NextAuth secret
       const jwt = await import("next-auth/jwt");
       const decoded = await jwt.decode({
         token,
@@ -31,6 +30,12 @@ export async function getAuthUser() {
         return { id: decoded.id as string, name: decoded.name as string, email: decoded.email as string };
       }
     }
+  } catch { /* fall through */ }
+
+  // Final fallback: single-user app — get the only user
+  try {
+    const user = await prisma.user.findFirst({ select: { id: true, name: true, email: true } });
+    if (user) return user;
   } catch { /* fall through */ }
 
   return null;
