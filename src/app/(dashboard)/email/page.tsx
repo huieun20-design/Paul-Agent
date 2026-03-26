@@ -173,7 +173,7 @@ export default function EmailPage() {
   const [aiReply, setAiReply] = useState("");
   const [generatingReply, setGeneratingReply] = useState(false);
 
-  const fetchEmails = useCallback(async () => {
+  const fetchEmails = useCallback(async (retry = 0) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ folder, limit: "200" });
@@ -182,21 +182,38 @@ export default function EmailPage() {
       if (filterAccount !== "all") params.set("accountId", filterAccount);
 
       const res = await fetch(`/api/email?${params}`);
+      if (res.status === 401 && retry < 2) {
+        await new Promise(r => setTimeout(r, 1500));
+        return fetchEmails(retry + 1);
+      }
       const data = await res.json();
       setEmails(data.emails || []);
     } catch {
-      console.error("Failed to fetch emails");
+      if (retry < 2) {
+        await new Promise(r => setTimeout(r, 1500));
+        return fetchEmails(retry + 1);
+      }
     } finally {
       setLoading(false);
     }
   }, [folder, search, category, filterAccount]);
 
-  const fetchAccounts = useCallback(async () => {
+  const fetchAccounts = useCallback(async (retry = 0) => {
     try {
       const res = await fetch("/api/email/accounts");
+      if (res.status === 401 && retry < 2) {
+        // Session might not be ready yet, retry
+        await new Promise(r => setTimeout(r, 1500));
+        return fetchAccounts(retry + 1);
+      }
       const data = await res.json();
       if (Array.isArray(data)) setEmailAccounts(data);
-    } catch { /* ignore */ }
+    } catch {
+      if (retry < 2) {
+        await new Promise(r => setTimeout(r, 1500));
+        return fetchAccounts(retry + 1);
+      }
+    }
     setAccountsLoaded(true);
   }, []);
 
