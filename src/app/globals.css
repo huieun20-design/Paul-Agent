@@ -22,3 +22,10 @@ body {
 
 @keyframes progressFill { from { width: 0; } }
 .progress-animated { animation: progressFill 1s ease-out; }
+
+/* Rich text editor placeholder */
+[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
