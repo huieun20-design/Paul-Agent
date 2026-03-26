@@ -363,7 +363,7 @@ export default function EmailPage() {
       <div
         className={cn(
           "flex flex-col border-r border-gray-200",
-          selectedEmail ? "hidden md:flex md:w-[340px] md:flex-shrink-0" : "flex-1"
+          selectedEmail ? "hidden" : "flex-1"
         )}
       >
         {/* Toolbar */}
