@@ -1,33 +1,32 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Single-user app — always return the user, never fail auth
-let cachedUserId: string | null = null;
+// Single-user app — NEVER return null, NEVER return 401
+const FALLBACK_USER = {
+  id: "cmn6h09kk000004l8p2u8i1b9",
+  name: "Paul",
+  email: "admin@paulagent.local",
+};
 
 export async function getAuthUser() {
-  // Use cached userId if available
-  if (cachedUserId) {
-    return { id: cachedUserId, name: "Paul", email: "admin@paulagent.local" };
-  }
-
-  // Get user from DB (single user app)
   try {
     const user = await prisma.user.findFirst({ select: { id: true, name: true, email: true } });
-    if (user) {
-      cachedUserId = user.id;
-      return user;
-    }
-  } catch { /* DB error */ }
+    if (user) return user;
+  } catch { /* DB connection failed — use hardcoded fallback */ }
 
-  return null;
+  return FALLBACK_USER;
 }
 
 export async function getUserCompanyId(userId: string): Promise<string | null> {
-  const membership = await prisma.companyMember.findFirst({
-    where: { userId },
-    select: { companyId: true },
-  });
-  return membership?.companyId || null;
+  try {
+    const membership = await prisma.companyMember.findFirst({
+      where: { userId },
+      select: { companyId: true },
+    });
+    return membership?.companyId || null;
+  } catch {
+    return null;
+  }
 }
 
 export function unauthorized() {
