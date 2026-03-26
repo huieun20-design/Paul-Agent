@@ -183,11 +183,8 @@ export default function EmailPage() {
 
       const res = await fetch(`/api/email?${params}`);
       const data = await res.json();
-      if (Array.isArray(data.emails) && data.emails.length > 0) {
+      if (Array.isArray(data.emails)) {
         setEmails(data.emails);
-      } else if (Array.isArray(data.emails) && data.emails.length === 0 && !search && category === "All") {
-        // Only clear if genuinely no emails (not filtered)
-        // Keep existing emails if API returned empty due to error
       }
     } catch { /* ignore */ }
     setLoading(false);
