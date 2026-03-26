@@ -38,12 +38,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(`/email?error=token_failed&detail=${encodeURIComponent(errMsg)}`, baseUrl));
     }
 
-    // Get user email from Microsoft Graph
-    const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
-      headers: { Authorization: `Bearer ${tokens.access_token}` },
-    });
-    const profile = await profileRes.json();
-    const outlookEmail = profile.mail || profile.userPrincipalName;
+    // Get user email — try multiple sources
+    let outlookEmail = "";
+
+    // 1. Try ID token (has email for personal accounts)
+    if (tokens.id_token) {
+      try {
+        const payload = JSON.parse(Buffer.from(tokens.id_token.split(".")[1], "base64").toString());
+        outlookEmail = payload.email || payload.preferred_username || "";
+      } catch { /* ignore */ }
+    }
+
+    // 2. Try Microsoft Graph
+    if (!outlookEmail) {
+      const profileRes = await fetch("https://graph.microsoft.com/v1.0/me", {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      const profile = await profileRes.json();
+      outlookEmail = profile.mail || profile.userPrincipalName || profile.displayName || "";
+    }
 
     if (!outlookEmail) {
       return NextResponse.redirect(new URL("/email?error=no_email", baseUrl));
