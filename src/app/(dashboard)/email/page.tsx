@@ -791,10 +791,9 @@ export default function EmailPage() {
               <div className="mt-6 border-t border-gray-100 pt-6">
                 {selectedEmail.bodyHtml ? (
                   <iframe
-                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><base target="_blank"><style>body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6;overflow-x:hidden}img{max-width:100%!important;height:auto!important}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${selectedEmail.bodyHtml}</body></html>`}
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="script-src 'none'"><base target="_blank"><style>body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6;overflow-x:hidden}img{max-width:100%!important;height:auto!important}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${selectedEmail.bodyHtml}</body></html>`}
                     className="w-full border-0"
                     style={{ minHeight: "200px" }}
-                    sandbox="allow-same-origin allow-popups"
                     onLoad={(e) => {
                       const iframe = e.target as HTMLIFrameElement;
                       const resize = () => {
@@ -804,10 +803,9 @@ export default function EmailPage() {
                         }
                       };
                       resize();
-                      // Re-check after images load
-                      setTimeout(resize, 500);
-                      setTimeout(resize, 1500);
-                      setTimeout(resize, 3000);
+                      setTimeout(resize, 1000);
+                      setTimeout(resize, 2000);
+                      setTimeout(resize, 4000);
                     }}
                   />
                 ) : (
