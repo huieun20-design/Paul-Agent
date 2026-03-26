@@ -29,8 +29,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-app px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <span className="text-5xl font-black text-gray-900 tracking-tight">PK</span>
-          <h1 className="mt-3 text-xl font-bold text-gray-900">Paul Agent</h1>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Hey, Paul!</h1>
           <p className="mt-1 text-sm text-gray-400">AI Business OS</p>
         </div>
         <div className="card p-8">

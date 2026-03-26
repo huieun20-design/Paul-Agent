@@ -34,7 +34,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-16 flex-col items-center bg-white border-r border-gray-200 py-4">
       {/* Logo */}
       <div className="mb-6">
-        <span className="text-xl font-black text-gray-900 tracking-tight">PK</span>
+        <span className="text-sm font-black text-gray-900 tracking-tight">Hey, Paul!</span>
       </div>
 
       {/* Navigation */}
