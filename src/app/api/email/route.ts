@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAuthUser, unauthorized } from "@/lib/api-helpers";
 
 // GET /api/email — List emails
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const user = await getAuthUser();
+  if (!user) return unauthorized();
 
-  const userId = (session.user as { id: string }).id;
+  const userId = user.id;
   const searchParams = request.nextUrl.searchParams;
   const folder = searchParams.get("folder") || "INBOX";
   const search = searchParams.get("search") || "";

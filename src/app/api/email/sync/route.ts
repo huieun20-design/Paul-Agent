@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAuthUser, unauthorized } from "@/lib/api-helpers";
 import { syncGmailEmails, syncGmailSentEmails } from "@/lib/email/gmail";
 import { categorizeEmail } from "@/lib/email/categorizer";
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const user = await getAuthUser();
+  if (!user) return unauthorized();
 
-  const userId = (session.user as { id: string }).id;
+  const userId = user.id;
 
   let body: { accountId?: string; maxResults?: number; customCategories?: Record<string, string[]>; recategorize?: boolean } = {};
   try {
