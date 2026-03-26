@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   if (!companyId) return badRequest("No company found");
 
   const body = await request.json();
-  const { name, position, salary, payType, cashAmount, payrollAmount, payFrequency, currency, notes } = body;
+  const { name, position, salary, wageType, hourlyRate, hoursPerWeek, payType, cashAmount, payrollAmount, payFrequency, currency, notes } = body;
   if (!name) return badRequest("name is required");
 
   const employee = await prisma.employee.create({
@@ -38,6 +38,9 @@ export async function POST(request: Request) {
       name,
       position: position || null,
       salary: parseFloat(salary) || 0,
+      wageType: wageType || "SALARY",
+      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+      hoursPerWeek: hoursPerWeek ? parseFloat(hoursPerWeek) : null,
       payType: payType || "PAYROLL",
       cashAmount: cashAmount ? parseFloat(cashAmount) : null,
       payrollAmount: payrollAmount ? parseFloat(payrollAmount) : null,

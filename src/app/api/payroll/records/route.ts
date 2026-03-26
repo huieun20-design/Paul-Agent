@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const companyId = await getUserCompanyId(user.id);
   if (!companyId) return badRequest("No company found");
 
-  const { employeeId, amount, cashAmount, payrollAmount, currency, period } = await request.json();
+  const { employeeId, amount, cashAmount, payrollAmount, hours, hourlyRate, currency, period } = await request.json();
   if (!employeeId || !period) return badRequest("employeeId and period required");
 
   const record = await prisma.payroll.create({
@@ -38,6 +38,8 @@ export async function POST(request: Request) {
       amount: parseFloat(amount) || 0,
       cashAmount: parseFloat(cashAmount) || 0,
       payrollAmount: parseFloat(payrollAmount) || 0,
+      hours: hours ? parseFloat(hours) : null,
+      hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
       currency: currency || "USD",
       period,
     },

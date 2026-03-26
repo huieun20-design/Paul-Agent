@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Loader2, Users, DollarSign, Banknote, CreditCard, Pencil } from "lucide-react";
+import { Plus, Loader2, Users, DollarSign, Banknote, CreditCard, Pencil, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 
 interface Employee {
   id: string; name: string; position: string | null; salary: number;
-  payType: string; cashAmount: number | null; payrollAmount: number | null;
+  payType: string; wageType: string; hourlyRate: number | null; hoursPerWeek: number | null;
+  cashAmount: number | null; payrollAmount: number | null;
   payFrequency: string; currency: string; startDate: string; isActive: boolean; notes: string | null;
   _count: { payrolls: number };
   payrolls: { paidAt: string; amount: number; cashAmount: number; payrollAmount: number }[];
@@ -16,12 +17,14 @@ interface Employee {
 
 interface PayrollRecord {
   id: string; amount: number; cashAmount: number; payrollAmount: number;
+  hours: number | null; hourlyRate: number | null;
   currency: string; period: string; status: string; notes: string | null; paidAt: string;
   employee: { name: string; position: string | null };
 }
 
 const payTypeColors: Record<string, string> = { PAYROLL: "blue", CASH: "green", MIXED: "purple" };
 const payTypeLabels: Record<string, string> = { PAYROLL: "Payroll Only", CASH: "Cash Only", MIXED: "Cash + Payroll" };
+const wageTypeLabels: Record<string, string> = { SALARY: "Salary", HOURLY: "Hourly" };
 
 export default function PayrollPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -117,8 +120,12 @@ export default function PayrollPage() {
                       <p className="text-sm font-semibold text-gray-900">{emp.name}</p>
                       <Badge variant={emp.isActive ? "green" : "default"}>{emp.isActive ? "Active" : "Inactive"}</Badge>
                       <Badge variant={payTypeColors[emp.payType]}>{payTypeLabels[emp.payType]}</Badge>
+                      {emp.wageType === "HOURLY" && <Badge variant="orange">Hourly ${emp.hourlyRate}/hr</Badge>}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">{emp.position || "No position"} · Since {new Date(emp.startDate).toLocaleDateString()} · {emp.payFrequency}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {emp.position || "No position"} · Since {new Date(emp.startDate).toLocaleDateString()} · {emp.payFrequency}
+                      {emp.wageType === "HOURLY" && emp.hoursPerWeek ? ` · ${emp.hoursPerWeek}h/wk` : ""}
+                    </p>
                   </div>
 
                   {/* Pay breakdown */}
@@ -196,8 +203,11 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
   const [form, setForm] = useState({
     name: employee?.name || "",
     position: employee?.position || "",
+    wageType: employee?.wageType || "SALARY",
     payType: employee?.payType || "PAYROLL",
     salary: employee?.salary?.toString() || "",
+    hourlyRate: employee?.hourlyRate?.toString() || "",
+    hoursPerWeek: employee?.hoursPerWeek?.toString() || "40",
     cashAmount: employee?.cashAmount?.toString() || "",
     payrollAmount: employee?.payrollAmount?.toString() || "",
     payFrequency: employee?.payFrequency || "MONTHLY",
@@ -207,17 +217,24 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
   });
   const [saving, setSaving] = useState(false);
 
+  const isHourly = form.wageType === "HOURLY";
+  const hourly = parseFloat(form.hourlyRate) || 0;
+  const hpw = parseFloat(form.hoursPerWeek) || 0;
+  const estimatedMonthly = isHourly ? hourly * hpw * 4.33 : 0; // 4.33 weeks/month
+
   // Auto-calculate total
   const cash = parseFloat(form.cashAmount) || 0;
   const payroll = parseFloat(form.payrollAmount) || 0;
-  const autoTotal = form.payType === "MIXED" ? cash + payroll : parseFloat(form.salary) || 0;
+  const baseSalary = isHourly ? estimatedMonthly : parseFloat(form.salary) || 0;
+  const autoTotal = form.payType === "MIXED" ? cash + payroll : baseSalary;
 
   // When pay type changes, adjust amounts
   const handlePayTypeChange = (type: string) => {
+    const sal = isHourly ? estimatedMonthly.toFixed(0) : form.salary;
     if (type === "CASH") {
-      setForm({ ...form, payType: type, cashAmount: form.salary, payrollAmount: "0" });
+      setForm({ ...form, payType: type, cashAmount: sal, payrollAmount: "0" });
     } else if (type === "PAYROLL") {
-      setForm({ ...form, payType: type, cashAmount: "0", payrollAmount: form.salary });
+      setForm({ ...form, payType: type, cashAmount: "0", payrollAmount: sal });
     } else {
       setForm({ ...form, payType: type });
     }
@@ -226,8 +243,14 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const salary = form.payType === "MIXED" ? cash + payroll : parseFloat(form.salary) || 0;
-    const body = { ...form, salary, cashAmount: form.payType === "PAYROLL" ? 0 : cash, payrollAmount: form.payType === "CASH" ? 0 : payroll || salary };
+    const salary = form.payType === "MIXED" ? cash + payroll : baseSalary;
+    const body = {
+      ...form, salary,
+      hourlyRate: isHourly ? hourly : null,
+      hoursPerWeek: isHourly ? hpw : null,
+      cashAmount: form.payType === "PAYROLL" ? 0 : cash,
+      payrollAmount: form.payType === "CASH" ? 0 : payroll || salary,
+    };
 
     if (employee) {
       await fetch(`/api/payroll/employees/${employee.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -247,9 +270,46 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
         <div><label className="block text-sm font-medium text-gray-700">Position</label><input type="text" value={form.position} onChange={e => setForm({...form, position: e.target.value})} className={inp} placeholder="e.g. Sales Manager" /></div>
       </div>
 
+      {/* Wage Type — Salary vs Hourly */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Wage Type</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => setForm({ ...form, wageType: "SALARY" })}
+            className={cn("rounded-xl border-2 p-3 text-left transition-all", form.wageType === "SALARY" ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300")}>
+            <div className="flex items-center gap-2 mb-1"><DollarSign className="h-4 w-4 text-blue-500" /><span className="text-sm font-semibold">Salary</span></div>
+            <p className="text-[11px] text-gray-400">Fixed monthly/weekly pay</p>
+          </button>
+          <button type="button" onClick={() => setForm({ ...form, wageType: "HOURLY" })}
+            className={cn("rounded-xl border-2 p-3 text-left transition-all", form.wageType === "HOURLY" ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300")}>
+            <div className="flex items-center gap-2 mb-1"><Clock className="h-4 w-4 text-orange-500" /><span className="text-sm font-semibold">Hourly</span></div>
+            <p className="text-[11px] text-gray-400">Paid per hour worked</p>
+          </button>
+        </div>
+      </div>
+
+      {/* Hourly fields */}
+      {isHourly && (
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Hourly Rate <span className="text-rose-400">*</span></label>
+            <input type="number" step="0.01" value={form.hourlyRate} onChange={e => setForm({...form, hourlyRate: e.target.value})} className={inp} placeholder="e.g. 18.00" required />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Hours / Week</label>
+            <input type="number" step="0.5" value={form.hoursPerWeek} onChange={e => setForm({...form, hoursPerWeek: e.target.value})} className={inp} placeholder="40" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Est. Monthly</label>
+            <div className="mt-1 rounded-xl border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-700">
+              ${estimatedMonthly.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pay Type Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Pay Type</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Pay Method</label>
         <div className="grid grid-cols-3 gap-2">
           {(["PAYROLL", "CASH", "MIXED"] as const).map(type => (
             <button key={type} type="button" onClick={() => handlePayTypeChange(type)}
@@ -285,12 +345,12 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
               <span className="text-lg font-bold text-gray-900">${autoTotal.toLocaleString()}</span>
             </div>
           </>
-        ) : (
+        ) : !isHourly ? (
           <div>
             <label className="block text-sm font-medium text-gray-700">Monthly Salary <span className="text-rose-400">*</span></label>
             <input type="number" step="0.01" value={form.salary} onChange={e => setForm({...form, salary: e.target.value})} className={inp} required />
           </div>
-        )}
+        ) : null}
         <div>
           <label className="block text-sm font-medium text-gray-700">Pay Frequency</label>
           <select value={form.payFrequency} onChange={e => setForm({...form, payFrequency: e.target.value})} className={inp}>
@@ -325,19 +385,41 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
 function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuccess: () => void }) {
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [running, setRunning] = useState(false);
-  const [overrides, setOverrides] = useState<Record<string, { cash: string; payroll: string }>>({});
+  const [overrides, setOverrides] = useState<Record<string, { cash: string; payroll: string; hours: string }>>({});
 
-  // Initialize overrides with employee defaults
   useEffect(() => {
-    const init: Record<string, { cash: string; payroll: string }> = {};
+    const init: Record<string, { cash: string; payroll: string; hours: string }> = {};
     employees.forEach(emp => {
+      const defaultHours = emp.wageType === "HOURLY" ? ((emp.hoursPerWeek || 40) * 4.33).toFixed(0) : "";
+      const defaultPay = emp.wageType === "HOURLY"
+        ? ((emp.hourlyRate || 0) * (emp.hoursPerWeek || 40) * 4.33).toFixed(0)
+        : (emp.payrollAmount || emp.salary || 0).toString();
       init[emp.id] = {
         cash: (emp.cashAmount || 0).toString(),
-        payroll: (emp.payrollAmount || emp.salary || 0).toString(),
+        payroll: emp.payType === "CASH" ? "0" : defaultPay,
+        hours: defaultHours,
       };
     });
     setOverrides(init);
   }, [employees]);
+
+  // Recalculate hourly employee pay when hours change
+  const updateHours = (empId: string, hours: string) => {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    const h = parseFloat(hours) || 0;
+    const total = h * (emp.hourlyRate || 0);
+    const o = overrides[empId];
+    if (emp.payType === "MIXED") {
+      // Keep ratio
+      const ratio = emp.cashAmount && emp.salary ? emp.cashAmount / emp.salary : 0;
+      setOverrides({ ...overrides, [empId]: { ...o, hours, cash: (total * ratio).toFixed(0), payroll: (total * (1 - ratio)).toFixed(0) } });
+    } else if (emp.payType === "CASH") {
+      setOverrides({ ...overrides, [empId]: { ...o, hours, cash: total.toFixed(0), payroll: "0" } });
+    } else {
+      setOverrides({ ...overrides, [empId]: { ...o, hours, cash: "0", payroll: total.toFixed(0) } });
+    }
+  };
 
   const getTotal = (empId: string) => {
     const o = overrides[empId];
@@ -352,9 +434,10 @@ function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuc
   const handleRun = async () => {
     setRunning(true);
     for (const emp of employees) {
-      const o = overrides[emp.id] || { cash: "0", payroll: emp.salary.toString() };
+      const o = overrides[emp.id] || { cash: "0", payroll: emp.salary.toString(), hours: "" };
       const cashAmt = parseFloat(o.cash) || 0;
       const payrollAmt = parseFloat(o.payroll) || 0;
+      const hours = parseFloat(o.hours) || null;
       await fetch("/api/payroll/records", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -363,6 +446,8 @@ function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuc
           amount: cashAmt + payrollAmt,
           cashAmount: cashAmt,
           payrollAmount: payrollAmt,
+          hours,
+          hourlyRate: emp.hourlyRate,
           currency: emp.currency,
           period,
         }),
@@ -386,26 +471,36 @@ function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuc
         <table className="w-full">
           <thead><tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Employee</th>
+            <th className="px-3 py-2 text-right text-xs font-semibold text-orange-500 uppercase">Hours</th>
             <th className="px-3 py-2 text-right text-xs font-semibold text-emerald-600 uppercase">Cash</th>
             <th className="px-3 py-2 text-right text-xs font-semibold text-blue-600 uppercase">Payroll</th>
             <th className="px-3 py-2 text-right text-xs font-semibold text-gray-400 uppercase">Total</th>
           </tr></thead>
           <tbody className="divide-y divide-gray-100">
             {employees.map(emp => {
-              const o = overrides[emp.id] || { cash: "0", payroll: "0" };
+              const o = overrides[emp.id] || { cash: "0", payroll: "0", hours: "" };
+              const isH = emp.wageType === "HOURLY";
               return (
                 <tr key={emp.id} className="hover:bg-gray-50">
                   <td className="px-3 py-2">
                     <p className="text-sm font-medium text-gray-900">{emp.name}</p>
                     <div className="flex items-center gap-1 mt-0.5">
                       <Badge variant={payTypeColors[emp.payType]}>{emp.payType}</Badge>
+                      {isH && <Badge variant="orange">${emp.hourlyRate}/hr</Badge>}
                       <span className="text-[10px] text-gray-400">{emp.position}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-2 w-28">
+                  <td className="px-3 py-2 w-20">
+                    {isH ? (
+                      <input type="number" step="0.5" value={o.hours} onChange={e => updateHours(emp.id, e.target.value)} className={cn(inp, "text-orange-600")} placeholder="hrs" />
+                    ) : (
+                      <span className="text-xs text-gray-300 block text-right">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 w-24">
                     <input type="number" step="0.01" value={o.cash} onChange={e => setOverrides({...overrides, [emp.id]: {...o, cash: e.target.value}})} className={cn(inp, "text-emerald-600")} />
                   </td>
-                  <td className="px-3 py-2 w-28">
+                  <td className="px-3 py-2 w-24">
                     <input type="number" step="0.01" value={o.payroll} onChange={e => setOverrides({...overrides, [emp.id]: {...o, payroll: e.target.value}})} className={cn(inp, "text-blue-600")} />
                   </td>
                   <td className="px-3 py-2 text-right text-sm font-bold text-gray-900 w-24">${getTotal(emp.id).toLocaleString()}</td>
@@ -414,7 +509,7 @@ function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuc
             })}
           </tbody>
           <tfoot><tr className="bg-gray-50 border-t border-gray-200">
-            <td className="px-3 py-2 text-sm font-semibold text-gray-700">Total ({employees.length})</td>
+            <td className="px-3 py-2 text-sm font-semibold text-gray-700" colSpan={2}>Total ({employees.length})</td>
             <td className="px-3 py-2 text-right text-sm font-bold text-emerald-600">${grandCash.toLocaleString()}</td>
             <td className="px-3 py-2 text-right text-sm font-bold text-blue-600">${grandPayroll.toLocaleString()}</td>
             <td className="px-3 py-2 text-right text-base font-bold text-gray-900">${grandTotal.toLocaleString()}</td>

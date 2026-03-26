@@ -460,6 +460,9 @@ model Employee {
   position     String?
   salary       Float
   payType      PayType  @default(PAYROLL)
+  wageType     WageType @default(SALARY)
+  hourlyRate   Float?
+  hoursPerWeek Float?
   cashAmount   Float?
   payrollAmount Float?
   payFrequency String   @default("MONTHLY")
@@ -472,6 +475,11 @@ model Employee {
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   payrolls Payroll[]
+}
+
+enum WageType {
+  SALARY
+  HOURLY
 }
 
 enum PayType {
@@ -487,6 +495,8 @@ model Payroll {
   amount       Float
   cashAmount   Float       @default(0)
   payrollAmount Float      @default(0)
+  hours        Float?
+  hourlyRate   Float?
   currency     String      @default("USD")
   period       String
   status       PayStatus   @default(PAID)
