@@ -844,7 +844,6 @@ function AccountsManager({ accounts, onRefresh }: { accounts: { id: string; emai
               <span className="text-[10px] bg-emerald-100 text-emerald-700 rounded-full px-2 py-0.5 font-medium">Connected</span>
               <button
                 onClick={() => {
-                  if (!confirm(`Disconnect ${acc.email}?`)) return;
                   fetch(`/api/email/accounts/${acc.id}`, { method: "DELETE" }).then(() => onRefresh());
                 }}
                 className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
