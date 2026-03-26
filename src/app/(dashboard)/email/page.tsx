@@ -315,7 +315,7 @@ export default function EmailPage() {
       <div
         className={cn(
           "flex flex-col border-r border-gray-200",
-          selectedEmail ? "w-[400px]" : "flex-1"
+          selectedEmail ? "hidden" : "flex-1"
         )}
       >
         {/* Toolbar */}
@@ -732,41 +732,49 @@ export default function EmailPage() {
                 </div>
               )}
 
-              {/* Attachments */}
-              {selectedEmail.attachments?.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {selectedEmail.attachments.map((att) => (
-                    <div
-                      key={att.id}
-                      className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2"
-                    >
-                      <Paperclip className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-700">
-                        {att.filename}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {formatFileSize(att.size)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* Email Body */}
               <div className="mt-6 border-t border-gray-100 pt-6">
                 {selectedEmail.bodyHtml ? (
                   <div
-                    className="prose prose-sm max-w-none"
+                    className="max-w-none text-sm text-gray-800 leading-relaxed [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-2 [&_a]:text-blue-600 [&_a]:underline [&_table]:w-full [&_table]:border-collapse [&_td]:p-1 [&_p]:my-2 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500"
                     dangerouslySetInnerHTML={{
                       __html: selectedEmail.bodyHtml,
                     }}
                   />
                 ) : (
-                  <pre className="whitespace-pre-wrap text-sm text-gray-700">
+                  <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
                     {selectedEmail.bodyText}
                   </pre>
                 )}
               </div>
+
+              {/* Attachments */}
+              {selectedEmail.attachments?.length > 0 && (
+                <div className="mt-6 border-t border-gray-100 pt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Attachments ({selectedEmail.attachments.length})</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedEmail.attachments.map((att) => {
+                      const isImage = att.mimeType.startsWith("image/");
+                      const isPdf = att.mimeType === "application/pdf";
+                      return (
+                        <div key={att.id} className="rounded-xl border border-gray-200 p-3 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg text-xs font-bold",
+                              isImage ? "bg-pink-100 text-pink-600" : isPdf ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"
+                            )}>
+                              {isImage ? "IMG" : isPdf ? "PDF" : att.filename.split(".").pop()?.toUpperCase() || "FILE"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate">{att.filename}</p>
+                              <p className="text-xs text-gray-400">{formatFileSize(att.size)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Reply/Forward Section */}
