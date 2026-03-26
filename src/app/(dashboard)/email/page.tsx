@@ -1129,9 +1129,23 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
     }
   }, [aiReply]);
 
-  // execCommand wrapper — prevent toolbar from stealing focus
+  // execCommand wrapper
   const exec = (cmd: string, value?: string) => {
-    editorRef.current?.focus();
+    const editor = editorRef.current;
+    if (!editor) return;
+    // Ensure editor has focus and selection
+    if (document.activeElement !== editor) {
+      editor.focus();
+      // Place cursor at end if no selection
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount === 0) {
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    }
     document.execCommand(cmd, false, value);
   };
 
