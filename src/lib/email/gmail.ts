@@ -29,19 +29,15 @@ interface GmailPart {
 async function refreshAccessToken(emailAccountId: string): Promise<string> {
   const emailAccount = await prisma.emailAccount.findUniqueOrThrow({
     where: { id: emailAccountId },
-    include: { user: { include: { accounts: true } } },
   });
 
   // Check if token is still valid
-  if (emailAccount.tokenExpiry && emailAccount.tokenExpiry > new Date()) {
-    return emailAccount.accessToken!;
+  if (emailAccount.tokenExpiry && emailAccount.tokenExpiry > new Date() && emailAccount.accessToken) {
+    return emailAccount.accessToken;
   }
 
-  const googleAccount = emailAccount.user.accounts.find(
-    (a) => a.provider === "google"
-  );
-
-  if (!googleAccount?.refresh_token) {
+  // Use refresh token from EmailAccount table
+  if (!emailAccount.refreshToken) {
     throw new Error("No refresh token available. Please re-authenticate.");
   }
 
@@ -51,7 +47,7 @@ async function refreshAccessToken(emailAccountId: string): Promise<string> {
     body: new URLSearchParams({
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: googleAccount.refresh_token,
+      refresh_token: emailAccount.refreshToken,
       grant_type: "refresh_token",
     }),
   });
