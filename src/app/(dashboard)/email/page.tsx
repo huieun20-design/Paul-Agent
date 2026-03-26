@@ -223,14 +223,18 @@ export default function EmailPage() {
     fetchEmails();
     fetchAccounts();
 
-    // If redirected from OAuth callback, refetch after a short delay
-    if (typeof window !== "undefined" && window.location.search.includes("connected=true")) {
-      setTimeout(() => {
-        fetchAccounts();
-        fetchEmails();
-      }, 1000);
-      // Clean URL
-      window.history.replaceState({}, "", "/email");
+    // If redirected from OAuth callback
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("connected") === "true") {
+        setTimeout(() => { fetchAccounts(); fetchEmails(); }, 1000);
+        window.history.replaceState({}, "", "/email");
+      }
+      if (params.get("error")) {
+        const detail = params.get("detail") || params.get("error");
+        alert(`Email connection error: ${detail}`);
+        window.history.replaceState({}, "", "/email");
+      }
     }
   }, [fetchEmails, fetchAccounts]);
 

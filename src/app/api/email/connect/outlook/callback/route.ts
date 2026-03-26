@@ -33,8 +33,9 @@ export async function GET(request: NextRequest) {
     const tokens = await tokenRes.json();
 
     if (!tokenRes.ok || !tokens.access_token) {
+      const errMsg = tokens.error_description || tokens.error || "unknown";
       console.error("Outlook token exchange failed:", tokens);
-      return NextResponse.redirect(new URL("/email?error=token_failed", baseUrl));
+      return NextResponse.redirect(new URL(`/email?error=token_failed&detail=${encodeURIComponent(errMsg)}`, baseUrl));
     }
 
     // Get user email from Microsoft Graph
