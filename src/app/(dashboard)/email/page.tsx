@@ -1059,6 +1059,44 @@ function AttachmentSection({ emailId, attachments }: { emailId: string; attachme
   );
 }
 
+function ListDropdown({ exec }: { exec: (cmd: string, value?: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button onMouseDown={e => { e.preventDefault(); setOpen(!open); }}
+        className="rounded h-7 px-1.5 flex items-center gap-1 text-gray-500 hover:bg-gray-200 text-xs" title="Lists">
+        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 16 16"><circle cx="2" cy="4" r="1.5"/><path d="M5 3h10v1H5zm0 4h10v1H5zm0 4h10v1H5z"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="12" r="1.5"/></svg>
+        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 12 12"><path d="M3 5l3 3 3-3z"/></svg>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-52 rounded-xl border border-gray-200 bg-white shadow-lg py-1">
+          <button onMouseDown={e => { e.preventDefault(); exec("insertUnorderedList"); setOpen(false); }}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 16 16"><circle cx="2" cy="4" r="1.5"/><path d="M5 3h10v1H5zm0 4h10v1H5zm0 4h10v1H5z"/><circle cx="2" cy="8" r="1.5"/><circle cx="2" cy="12" r="1.5"/></svg>
+            Insert Bulleted List
+          </button>
+          <button onMouseDown={e => { e.preventDefault(); exec("insertOrderedList"); setOpen(false); }}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 16 16"><path d="M5 3h10v1H5zm0 4h10v1H5zm0 4h10v1H5z"/><text x="0" y="5" fontSize="5" fontWeight="bold">1</text><text x="0" y="9" fontSize="5" fontWeight="bold">2</text><text x="0" y="13" fontSize="5" fontWeight="bold">3</text></svg>
+            Insert Numbered List
+          </button>
+          <div className="border-t border-gray-100 my-1" />
+          <button onMouseDown={e => { e.preventDefault(); exec("indent"); setOpen(false); }}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 16 16"><path d="M2 3h12v1H2zm4 3h8v1H6zm4 3h4v1H10zm-8 3h12v1H2z"/></svg>
+            Increase List Level
+          </button>
+          <button onMouseDown={e => { e.preventDefault(); exec("outdent"); setOpen(false); }}
+            className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+            <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 16 16"><path d="M2 3h12v1H2zm0 3h8v1H2zm0 3h4v1H2zm0 3h12v1H2z"/></svg>
+            Decrease List Level
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ContactInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
   const [suggestions, setSuggestions] = useState<{ email: string; name: string }[]>([]);
   const [show, setShow] = useState(false);
@@ -1323,11 +1361,7 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
               className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-[10px]" title={b.title}>{b.label}</button>
           ))}
           <div className="w-px h-5 bg-gray-200 mx-1" />
-          <button onMouseDown={e => { e.preventDefault(); exec("insertUnorderedList"); }} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Bullet list">•≡</button>
-          <button onMouseDown={e => { e.preventDefault(); exec("insertOrderedList"); }} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Number list">1≡</button>
-          <div className="w-px h-5 bg-gray-200 mx-1" />
-          <button onMouseDown={e => { e.preventDefault(); exec("indent"); }} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Indent">→≡</button>
-          <button onMouseDown={e => { e.preventDefault(); exec("outdent"); }} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Outdent">←≡</button>
+          <ListDropdown exec={exec} />
           <div className="w-px h-5 bg-gray-200 mx-1" />
           <button onMouseDown={e => { e.preventDefault(); exec("formatBlock", "blockquote"); }} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Quote">❝</button>
           <button onMouseDown={e => { e.preventDefault(); handleLink(); }} className="rounded w-7 h-7 flex items-center justify-center text-gray-500 hover:bg-gray-200 text-xs" title="Link">🔗</button>
