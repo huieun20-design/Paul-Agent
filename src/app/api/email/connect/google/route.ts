@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-// GET — Redirect to Google OAuth consent screen
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -14,6 +13,7 @@ export async function GET() {
     return NextResponse.json({ error: "Google OAuth not configured" }, { status: 500 });
   }
 
+  const userId = (session.user as { id: string }).id;
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   const redirectUri = `${baseUrl}/api/email/connect/google/callback`;
 
@@ -31,6 +31,7 @@ export async function GET() {
     scope: scopes,
     access_type: "offline",
     prompt: "consent",
+    state: userId, // Pass userId so callback doesn't need session
   });
 
   return NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);

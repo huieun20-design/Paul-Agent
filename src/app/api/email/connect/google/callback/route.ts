@@ -3,25 +3,30 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-// GET — Google OAuth callback
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
   const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-
-  if (!session?.user) {
-    return NextResponse.redirect(new URL("/login", baseUrl));
-  }
-
-  const userId = (session.user as { id: string }).id;
   const code = request.nextUrl.searchParams.get("code");
   const error = request.nextUrl.searchParams.get("error");
+  const state = request.nextUrl.searchParams.get("state"); // userId from state param
 
   if (error || !code) {
     return NextResponse.redirect(new URL("/email?error=oauth_denied", baseUrl));
   }
 
+  // Try to get userId from session first, fall back to state param
+  let userId = state;
   try {
-    // Exchange code for tokens
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+      userId = (session.user as { id: string }).id;
+    }
+  } catch { /* use state */ }
+
+  if (!userId) {
+    return NextResponse.redirect(new URL("/email?error=no_session", baseUrl));
+  }
+
+  try {
     const redirectUri = `${baseUrl}/api/email/connect/google/callback`;
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -59,7 +64,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (existing) {
-      // Update tokens
       await prisma.emailAccount.update({
         where: { id: existing.id },
         data: {
@@ -69,7 +73,6 @@ export async function GET(request: NextRequest) {
         },
       });
     } else {
-      // Create new email account
       await prisma.emailAccount.create({
         data: {
           userId,
