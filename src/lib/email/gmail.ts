@@ -20,6 +20,7 @@ interface GmailMessage {
 interface GmailPart {
   mimeType: string;
   filename?: string;
+  headers?: { name: string; value: string }[];
   body?: { data?: string; size: number; attachmentId?: string };
   parts?: GmailPart[];
 }
@@ -146,6 +147,42 @@ function extractBody(payload: GmailMessage["payload"]): {
   return { text, html };
 }
 
+// Extract CID mapping (Content-ID → attachmentId) for inline images
+function extractCidMap(payload: GmailMessage["payload"]): Record<string, string> {
+  const cidMap: Record<string, string> = {};
+
+  function processPart(part: GmailPart) {
+    if (part.headers && part.body?.attachmentId) {
+      const cidHeader = part.headers.find(h => h.name.toLowerCase() === "content-id");
+      if (cidHeader) {
+        // Content-ID comes as <xxx> — strip angle brackets
+        const cid = cidHeader.value.replace(/[<>]/g, "");
+        cidMap[cid] = part.body.attachmentId;
+      }
+    }
+    if (part.parts) part.parts.forEach(processPart);
+  }
+
+  if (payload.parts) payload.parts.forEach(processPart);
+  return cidMap;
+}
+
+// Replace cid: references in HTML with actual Gmail attachment URLs
+function replaceCidWithUrls(html: string, cidMap: Record<string, string>, messageId: string, accessToken: string): string {
+  // For each cid:xxx in the HTML, we can't fetch inline during sync
+  // Instead we'll store the mapping and resolve at display time via our API
+  // Replace cid:xxx with our proxy endpoint
+  let result = html;
+  for (const [cid, attachmentId] of Object.entries(cidMap)) {
+    // Replace both src="cid:xxx" patterns
+    result = result.replace(
+      new RegExp(`cid:${cid.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'gi'),
+      `CID_PLACEHOLDER_${attachmentId}`
+    );
+  }
+  return result;
+}
+
 // Extract attachments info
 function extractAttachments(
   payload: GmailMessage["payload"]
@@ -214,6 +251,8 @@ export async function syncGmailEmails(
 
     const headers = message.payload.headers;
     const { text, html } = extractBody(message.payload);
+    const cidMap = extractCidMap(message.payload);
+    const processedHtml = html ? replaceCidWithUrls(html, cidMap, message.id, "") : html;
     const attachments = extractAttachments(message.payload);
     const isRead = !message.labelIds.includes("UNREAD");
     const folder = message.labelIds.includes("SENT") ? "SENT" : "INBOX";
@@ -232,7 +271,7 @@ export async function syncGmailEmails(
           bcc: parseEmailAddresses(getHeader(headers, "Bcc")),
           subject,
           bodyText: text,
-          bodyHtml: html,
+          bodyHtml: processedHtml,
           date: new Date(parseInt(message.internalDate)),
           isRead,
           folder: folder as "INBOX" | "SENT",
@@ -289,6 +328,8 @@ export async function syncGmailSentEmails(
 
     const headers = message.payload.headers;
     const { text, html } = extractBody(message.payload);
+    const cidMap = extractCidMap(message.payload);
+    const processedHtml = html ? replaceCidWithUrls(html, cidMap, message.id, "") : html;
     const attachments = extractAttachments(message.payload);
     const subject = getHeader(headers, "Subject");
     const category = categorizeEmail(subject, text, customCategories);
@@ -305,7 +346,7 @@ export async function syncGmailSentEmails(
           bcc: [],
           subject,
           bodyText: text,
-          bodyHtml: html,
+          bodyHtml: processedHtml,
           date: new Date(parseInt(message.internalDate)),
           isRead: true,
           folder: "SENT",

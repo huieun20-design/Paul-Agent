@@ -789,9 +789,14 @@ export default function EmailPage() {
 
               {/* Email Body */}
               <div className="mt-6 border-t border-gray-100 pt-6">
-                {selectedEmail.bodyHtml ? (
-                  <iframe
-                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="script-src 'none'"><base target="_blank"><style>body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6;overflow-x:hidden}img{max-width:100%!important;height:auto!important}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${selectedEmail.bodyHtml}</body></html>`}
+                {selectedEmail.bodyHtml ? (() => {
+                  // Replace CID placeholders with actual attachment proxy URLs
+                  let html = selectedEmail.bodyHtml!;
+                  html = html.replace(/CID_PLACEHOLDER_([a-zA-Z0-9_-]+)/g, (_, attId) =>
+                    `/api/email/${selectedEmail.id}/attachment?attachmentId=${attId}`
+                  );
+                  return <iframe
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="script-src 'none'"><base target="_blank"><style>body{font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6;overflow-x:hidden}img{max-width:100%!important;height:auto!important}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${html}</body></html>`}
                     className="w-full border-0"
                     style={{ minHeight: "200px" }}
                     onLoad={(e) => {
@@ -807,8 +812,8 @@ export default function EmailPage() {
                       setTimeout(resize, 2000);
                       setTimeout(resize, 4000);
                     }}
-                  />
-                ) : (
+                  />;
+                })() : (
                   <pre className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
                     {selectedEmail.bodyText}
                   </pre>
