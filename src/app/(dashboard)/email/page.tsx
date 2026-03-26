@@ -790,10 +790,15 @@ export default function EmailPage() {
               {/* Email Body */}
               <div className="mt-6 border-t border-gray-100 pt-6">
                 {selectedEmail.bodyHtml ? (
-                  <div
-                    className="max-w-none text-sm text-gray-800 leading-relaxed [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:my-2 [&_a]:text-blue-600 [&_a]:underline [&_table]:w-full [&_table]:border-collapse [&_td]:p-1 [&_p]:my-2 [&_h1]:text-lg [&_h1]:font-bold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-3 [&_blockquote]:text-gray-500"
-                    dangerouslySetInnerHTML={{
-                      __html: selectedEmail.bodyHtml,
+                  <iframe
+                    srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;font-size:14px;color:#333;margin:0;padding:0;line-height:1.6}img{max-width:100%!important;height:auto!important;display:block}a{color:#2563eb}table{max-width:100%!important}*{box-sizing:border-box}</style></head><body>${selectedEmail.bodyHtml}</body></html>`}
+                    className="w-full border-0 min-h-[400px]"
+                    sandbox="allow-same-origin"
+                    onLoad={(e) => {
+                      const iframe = e.target as HTMLIFrameElement;
+                      if (iframe.contentDocument) {
+                        iframe.style.height = Math.max(400, iframe.contentDocument.body.scrollHeight + 40) + "px";
+                      }
                     }}
                   />
                 ) : (
