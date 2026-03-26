@@ -158,9 +158,9 @@ export default function DashboardPage() {
   return (
     <div className="max-w-[1300px] mx-auto space-y-5">
       {/* HEADER + Motivation */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{getGreeting()}, Paul</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">{getGreeting()}, Paul</h1>
           <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5 text-amber-500" />
             {quote.emoji} {quote.text}
@@ -168,7 +168,7 @@ export default function DashboardPage() {
         </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input placeholder="Search..." className="w-56 rounded-xl bg-white border border-gray-200 py-2 pl-9 pr-4 text-sm text-gray-700 focus:outline-none focus:border-gray-400" />
+          <input placeholder="Search..." className="w-full md:w-56 rounded-xl bg-white border border-gray-200 py-2 pl-9 pr-4 text-sm text-gray-700 focus:outline-none focus:border-gray-400" />
         </div>
       </div>
 
@@ -328,7 +328,7 @@ function WeatherCard({ weather }: { weather: Weather | null }) {
   const subTextColor = isLightSky ? "text-gray-600" : "text-white/70";
 
   return (
-    <div className={cn("col-span-4 rounded-2xl p-5 bg-gradient-to-br overflow-hidden relative", getSkyGradient())}>
+    <div className={cn("md:col-span-4 rounded-2xl p-5 bg-gradient-to-br overflow-hidden relative", getSkyGradient())}>
       {/* Stars for night */}
       {isNight && (
         <div className="absolute inset-0 overflow-hidden">

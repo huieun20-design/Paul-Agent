@@ -363,12 +363,12 @@ export default function EmailPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-3rem)] md:max-w-[1300px] mx-auto rounded-none md:rounded-2xl overflow-hidden card">
+    <div className="flex h-[calc(100vh-7rem)] md:h-[calc(100vh-3rem)] md:max-w-[1300px] mx-auto rounded-none md:rounded-2xl overflow-hidden card">
       {/* Left Panel — Email List */}
       <div
         className={cn(
           "flex flex-col border-r border-gray-200",
-          selectedEmail ? "hidden" : "flex-1"
+          selectedEmail ? "hidden md:flex md:w-[340px] md:flex-shrink-0" : "flex-1"
         )}
       >
         {/* Toolbar */}
@@ -468,7 +468,7 @@ export default function EmailPage() {
                 onDragEnd={() => setDragCat(null)}
                 onClick={() => setCategory(cat)}
                 className={cn(
-                  "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-all",
+                  "whitespace-nowrap rounded-full px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-semibold transition-all",
                   isDraggable && "cursor-grab active:cursor-grabbing",
                   dragCat === cat && "opacity-40 scale-95",
                   cat === "All"
@@ -594,13 +594,13 @@ export default function EmailPage() {
       {selectedEmail && (
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Detail Header */}
-          <div className="flex items-center gap-2 border-b border-gray-200 px-6 py-3">
+          <div className="flex items-center gap-1 md:gap-2 border-b border-gray-200 px-3 md:px-6 py-2 md:py-3 flex-wrap">
             <button
               onClick={() => {
                 setSelectedEmail(null);
                 setAnalysis(null);
               }}
-              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100"
+              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -608,7 +608,7 @@ export default function EmailPage() {
             <button
               onClick={() => handleAnalyze(selectedEmail.id)}
               disabled={analyzing}
-              className="flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 min-h-[44px] md:min-h-0"
             >
               {analyzing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -628,34 +628,34 @@ export default function EmailPage() {
                 });
                 setSelectedEmail(null);
               }}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="flex items-center gap-1.5 rounded-lg px-2 md:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] md:min-h-0"
             >
               <Mail className="h-4 w-4" />
-              Unread
+              <span className="hidden md:inline">Unread</span>
             </button>
             <button
               onClick={() => {
                 setReplyMode("reply");
                 setAiReply("");
               }}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="flex items-center gap-1.5 rounded-lg px-2 md:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] md:min-h-0"
             >
               <Reply className="h-4 w-4" />
-              Reply
+              <span className="hidden md:inline">Reply</span>
             </button>
             <button
               onClick={() => {
                 setReplyMode("forward");
                 setAiReply("");
               }}
-              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+              className="flex items-center gap-1.5 rounded-lg px-2 md:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] md:min-h-0"
             >
               <Forward className="h-4 w-4" />
-              Forward
+              <span className="hidden md:inline">Forward</span>
             </button>
             <button
               onClick={() => handleDelete(selectedEmail.id)}
-              className="rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600"
+              className="rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -663,7 +663,7 @@ export default function EmailPage() {
 
           {/* Email Content */}
           <div className="flex-1 overflow-y-auto">
-            <div className="px-6 py-4">
+            <div className="px-4 md:px-6 py-4">
               {/* Subject */}
               <h2 className="text-xl font-semibold text-gray-900">
                 {selectedEmail.subject || "(no subject)"}

@@ -66,24 +66,24 @@ export default function BillingPage() {
 
   return (
     <div className="max-w-[1300px] mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Billing</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Billing</h1>
           <p className="text-sm text-gray-400 mt-0.5">Invoices & Claims</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => setShowAddClaim(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"><AlertTriangle className="h-4 w-4 text-gray-400" /> Claim</button>
           <button onClick={() => setShowAddInvoice(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"><Plus className="h-4 w-4 text-gray-400" /> Invoice</button>
         </div>
       </div>
 
       {/* Summary */}
-      <div className="mt-5 grid grid-cols-5 gap-4">
+      <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <div className="card p-4"><p className="text-xs text-gray-400 font-semibold uppercase">Total Invoiced</p><p className="text-xl font-bold text-gray-900 mt-1">${summary.totalInvoiced.toLocaleString()}</p></div>
         <div className="card p-4"><p className="text-xs text-gray-400 font-semibold uppercase">Paid</p><p className="text-xl font-bold text-emerald-600 mt-1">${summary.totalPaid.toLocaleString()}</p></div>
         <div className="card p-4"><p className="text-xs text-gray-400 font-semibold uppercase">Outstanding</p><p className="text-xl font-bold text-rose-500 mt-1">${summary.outstanding.toLocaleString()}</p></div>
         <div className="card p-4"><p className="text-xs text-gray-400 font-semibold uppercase">Overdue</p><p className="text-xl font-bold text-amber-600 mt-1">{summary.overdueCount}</p></div>
-        <div className="card p-4"><p className="text-xs text-gray-400 font-semibold uppercase">Open Claims</p><p className="text-xl font-bold text-orange-500 mt-1">{summary.openClaims}</p></div>
+        <div className="card p-4 col-span-2 md:col-span-1"><p className="text-xs text-gray-400 font-semibold uppercase">Open Claims</p><p className="text-xl font-bold text-orange-500 mt-1">{summary.openClaims}</p></div>
       </div>
 
       {/* Tabs */}
@@ -101,7 +101,7 @@ export default function BillingPage() {
           {/* INVOICES */}
           {tab === "invoices" && (
             <div>
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4 flex-wrap">
                 {INV_STATUSES.map(s => {
                   const colors: Record<string, string> = { UNPAID: "bg-rose-50 text-rose-600 hover:bg-rose-100", PARTIAL: "bg-amber-50 text-amber-600 hover:bg-amber-100", PAID: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100", OVERDUE: "bg-purple-50 text-purple-600 hover:bg-purple-100" };
                   return <button key={s} onClick={() => setInvStatus(s)} className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", invStatus === s ? "bg-gray-900 text-white" : colors[s] || "bg-gray-100 text-gray-500 hover:bg-gray-200")}>{s}</button>;
@@ -137,7 +137,7 @@ export default function BillingPage() {
           {/* CLAIMS */}
           {tab === "claims" && (
             <div>
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-4 flex-wrap">
                 {CLAIM_STATUSES.map(s => {
                   const colors: Record<string, string> = { OPEN: "bg-amber-50 text-amber-600 hover:bg-amber-100", IN_PROGRESS: "bg-blue-50 text-blue-600 hover:bg-blue-100", RESOLVED: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100", CLOSED: "bg-gray-100 text-gray-500 hover:bg-gray-200" };
                   return <button key={s} onClick={() => setClaimStatus(s)} className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", claimStatus === s ? "bg-gray-900 text-white" : colors[s] || "bg-gray-100 text-gray-500 hover:bg-gray-200")}>{s === "All" ? "All" : s.replace("_", " ")}</button>;
@@ -176,7 +176,7 @@ export default function BillingPage() {
             {selectedClaim.description && <div><p className="text-xs text-gray-400 mb-1">Description</p><p className="text-sm text-gray-700">{selectedClaim.description}</p></div>}
             <div>
               <p className="text-xs text-gray-400 mb-2">Status</p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"].map(s => (
                   <button key={s} onClick={() => updateClaimStatus(selectedClaim.id, s)} className={cn("rounded-lg px-3 py-1.5 text-xs font-semibold", selectedClaim.status === s ? "bg-gray-900 text-white" : ({"OPEN":"bg-amber-50 text-amber-600 hover:bg-amber-100","IN_PROGRESS":"bg-blue-50 text-blue-600 hover:bg-blue-100","RESOLVED":"bg-emerald-50 text-emerald-600 hover:bg-emerald-100","CLOSED":"bg-gray-100 text-gray-500 hover:bg-gray-200"} as Record<string,string>)[s] || "bg-gray-100 text-gray-500 hover:bg-gray-200")}>{s.replace("_", " ")}</button>
                 ))}

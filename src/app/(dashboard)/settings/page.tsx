@@ -59,7 +59,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-[1300px] mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-gray-900">Settings</h1>
 
       {/* Profile Section */}
       <div className="mt-8 card p-6">

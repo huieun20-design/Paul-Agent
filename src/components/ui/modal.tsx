@@ -42,7 +42,7 @@ export function Modal({
         onClick={onClose}
       />
       <div
-        className={`relative w-full ${sizeClasses[size]} mx-4 rounded-2xl bg-white shadow-2xl`}
+        className={`relative w-full ${sizeClasses[size]} mx-0 md:mx-4 rounded-none md:rounded-2xl bg-white shadow-2xl max-h-[100dvh] md:max-h-[90vh] flex flex-col`}
       >
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
@@ -53,7 +53,7 @@ export function Modal({
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-4 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

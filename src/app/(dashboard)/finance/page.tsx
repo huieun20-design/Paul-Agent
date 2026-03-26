@@ -112,12 +112,12 @@ export default function FinancePage() {
   return (
     <div className="max-w-[1300px] mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Finance</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Finance</h1>
           <p className="text-sm text-gray-400 mt-0.5">Banking, Credit Cards & Payments</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">
             <select value={selectedCompany} onChange={e => { setSelectedCompany(e.target.value); setSelectedAccount(null); }}
               className="appearance-none rounded-xl border border-gray-200 bg-white pl-3 pr-8 py-2.5 text-sm font-medium text-gray-700 focus:outline-none">
@@ -133,16 +133,16 @@ export default function FinancePage() {
       </div>
 
       {/* Summary */}
-      <div className="mt-5 grid grid-cols-5 gap-4">
+      <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <SumCard icon={<Landmark className="h-4 w-4 text-blue-500" />} label="Bank Balance" value={`$${summary.totalBalance.toLocaleString()}`} sub={`${bankAccounts.length} accounts`} />
         <SumCard icon={<CreditCard className="h-4 w-4 text-purple-500" />} label="Credit Used" value={`$${totalCreditUsed.toLocaleString()}`} sub={totalCreditLimit > 0 ? `of $${totalCreditLimit.toLocaleString()} limit` : `${creditCards.length} cards`} />
         <SumCard icon={<TrendingUp className="h-4 w-4 text-emerald-500" />} label="Income" value={`$${summary.incoming.toLocaleString()}`} color="text-emerald-600" />
         <SumCard icon={<TrendingDown className="h-4 w-4 text-rose-500" />} label="Expense" value={`$${summary.outgoing.toLocaleString()}`} color="text-rose-500" />
-        <SumCard icon={<DollarSign className="h-4 w-4 text-violet-500" />} label="Net" value={`$${summary.net.toLocaleString()}`} color={summary.net >= 0 ? "text-emerald-600" : "text-rose-500"} />
+        <SumCard icon={<DollarSign className="h-4 w-4 text-violet-500" />} label="Net" value={`$${summary.net.toLocaleString()}`} color={summary.net >= 0 ? "text-emerald-600" : "text-rose-500"} className="col-span-2 md:col-span-1" />
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 flex items-center gap-1 border-b border-gray-200">
+      <div className="mt-6 flex items-center gap-1 border-b border-gray-200 overflow-x-auto">
         {(["overview", "credit-cards", "payments", "transactions"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} className={cn(
             "px-4 py-2.5 text-sm font-medium border-b-2 -mb-px capitalize transition-colors",
@@ -156,8 +156,8 @@ export default function FinancePage() {
 
           {/* ====== OVERVIEW ====== */}
           {tab === "overview" && (
-            <div className="grid grid-cols-12 gap-5">
-              <div className="col-span-5 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+              <div className="md:col-span-5 space-y-3">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Bank Accounts</h3>
                 {bankAccounts.length === 0 ? <div className="card p-8 text-center text-sm text-gray-400">No bank accounts</div> : bankAccounts.map(a => (
                   <AccountCard key={a.id} account={a} onClick={() => { setSelectedAccount(a); setTab("transactions"); }} />
@@ -171,7 +171,7 @@ export default function FinancePage() {
                   </>
                 )}
               </div>
-              <div className="col-span-7">
+              <div className="md:col-span-7">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Payments</h3>
                 <PaymentList payments={payments.slice(0, 10)} />
               </div>
@@ -218,7 +218,7 @@ export default function FinancePage() {
               {creditCards.length === 0 ? (
                 <div className="card p-12 text-center text-sm text-gray-400">No credit cards. Click "+ Account" and select Credit Card type.</div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {creditCards.map(card => {
                     const available = (card.creditLimit || 0) - Math.abs(card.balance);
                     const utilization = card.creditLimit ? (Math.abs(card.balance) / card.creditLimit) * 100 : 0;
@@ -324,8 +324,8 @@ export default function FinancePage() {
 
           {/* ====== TRANSACTIONS ====== */}
           {tab === "transactions" && (
-            <div className="grid grid-cols-12 gap-5">
-              <div className="col-span-4 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+              <div className="md:col-span-4 space-y-2">
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Accounts</h3>
                 {filtered.map(a => (
                   <button key={a.id} onClick={() => setSelectedAccount(a)} className={cn("w-full rounded-xl border p-3 text-left transition-all", selectedAccount?.id === a.id ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300")}>
@@ -341,7 +341,7 @@ export default function FinancePage() {
                 ))}
                 <button onClick={() => setShowAddTx(true)} disabled={!selectedAccount} className="w-full rounded-xl border border-dashed border-gray-300 p-3 text-sm text-gray-400 hover:border-gray-400 disabled:opacity-40"><Plus className="h-4 w-4 inline mr-1" /> Transaction</button>
               </div>
-              <div className="col-span-8">
+              <div className="md:col-span-8">
                 {selectedAccount ? (
                   <>
                     <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{selectedAccount.name} · {selectedAccount.company.name}</h3>
@@ -382,9 +382,9 @@ export default function FinancePage() {
 
 // ============ Sub Components ============
 
-function SumCard({ icon, label, value, sub, color }: { icon: React.ReactNode; label: string; value: string; sub?: string; color?: string }) {
+function SumCard({ icon, label, value, sub, color, className }: { icon: React.ReactNode; label: string; value: string; sub?: string; color?: string; className?: string }) {
   return (
-    <div className="card p-4">
+    <div className={cn("card p-4", className)}>
       <div className="flex items-center gap-2 mb-2">{icon}<span className="text-[11px] text-gray-400 font-semibold uppercase">{label}</span></div>
       <p className={cn("text-xl font-bold", color || "text-gray-900")}>{value}</p>
       {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}

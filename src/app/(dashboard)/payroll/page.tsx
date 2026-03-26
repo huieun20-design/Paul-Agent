@@ -55,12 +55,12 @@ export default function PayrollPage() {
 
   return (
     <div className="max-w-[1300px] mx-auto">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payroll</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Payroll</h1>
           <p className="text-sm text-gray-400 mt-0.5">Employee salary management</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={() => setShowPayroll(true)} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             <DollarSign className="h-4 w-4 text-gray-400" /> Run Payroll
           </button>
@@ -71,7 +71,7 @@ export default function PayrollPage() {
       </div>
 
       {/* Stats */}
-      <div className="mt-5 grid grid-cols-5 gap-4">
+      <div className="mt-5 grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <div className="card p-4">
           <div className="flex items-center gap-2 text-gray-500"><Users className="h-4 w-4" /><span className="text-xs uppercase font-semibold">Employees</span></div>
           <p className="mt-1 text-2xl font-bold">{active.length}</p>
@@ -88,7 +88,7 @@ export default function PayrollPage() {
           <div className="flex items-center gap-2 text-blue-600"><CreditCard className="h-4 w-4" /><span className="text-xs uppercase font-semibold">Payroll</span></div>
           <p className="mt-1 text-2xl font-bold text-blue-600">${totalPayroll.toLocaleString()}</p>
         </div>
-        <div className="card p-4">
+        <div className="card p-4 col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 text-gray-500"><DollarSign className="h-4 w-4" /><span className="text-xs uppercase font-semibold">Total Paid</span></div>
           <p className="mt-1 text-2xl font-bold">${totalPaid.toLocaleString()}</p>
         </div>
@@ -113,23 +113,25 @@ export default function PayrollPage() {
               <div className="card p-12 text-center text-sm text-gray-400">No employees yet</div>
             ) : employees.map(emp => (
               <div key={emp.id} className={cn("card p-4", !emp.isActive && "opacity-50")}>
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-700">{emp.name[0]}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold text-gray-900">{emp.name}</p>
-                      <Badge variant={emp.isActive ? "green" : "default"}>{emp.isActive ? "Active" : "Inactive"}</Badge>
-                      <Badge variant={payTypeColors[emp.payType]}>{payTypeLabels[emp.payType]}</Badge>
-                      {emp.wageType === "HOURLY" && <Badge variant="orange">Hourly ${emp.hourlyRate}/hr</Badge>}
+                <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+                  <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-700 flex-shrink-0">{emp.name[0]}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-gray-900">{emp.name}</p>
+                        <Badge variant={emp.isActive ? "green" : "default"}>{emp.isActive ? "Active" : "Inactive"}</Badge>
+                        <Badge variant={payTypeColors[emp.payType]}>{payTypeLabels[emp.payType]}</Badge>
+                        {emp.wageType === "HOURLY" && <Badge variant="orange">Hourly ${emp.hourlyRate}/hr</Badge>}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {emp.position || "No position"} · Since {new Date(emp.startDate).toLocaleDateString()} · {emp.payFrequency}
+                        {emp.wageType === "HOURLY" && emp.hoursPerWeek ? ` · ${emp.hoursPerWeek}h/wk` : ""}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {emp.position || "No position"} · Since {new Date(emp.startDate).toLocaleDateString()} · {emp.payFrequency}
-                      {emp.wageType === "HOURLY" && emp.hoursPerWeek ? ` · ${emp.hoursPerWeek}h/wk` : ""}
-                    </p>
                   </div>
 
                   {/* Pay breakdown */}
-                  <div className="flex items-center gap-4 text-right">
+                  <div className="flex items-center gap-4 text-right ml-13 md:ml-0">
                     {(emp.payType === "CASH" || emp.payType === "MIXED") && (
                       <div>
                         <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 justify-end"><Banknote className="h-3 w-3" />Cash</p>
@@ -289,7 +291,7 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
 
       {/* Hourly fields */}
       {isHourly && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Hourly Rate <span className="text-rose-400">*</span></label>
             <input type="number" step="0.01" value={form.hourlyRate} onChange={e => setForm({...form, hourlyRate: e.target.value})} className={inp} placeholder="e.g. 18.00" required />
@@ -310,7 +312,7 @@ function EmployeeForm({ employee, onSuccess }: { employee?: Employee; onSuccess:
       {/* Pay Type Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Pay Method</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {(["PAYROLL", "CASH", "MIXED"] as const).map(type => (
             <button key={type} type="button" onClick={() => handlePayTypeChange(type)}
               className={cn("rounded-xl border-2 p-3 text-left transition-all",
@@ -467,8 +469,8 @@ function RunPayrollForm({ employees, onSuccess }: { employees: Employee[]; onSuc
       </div>
 
       {/* Employee list with editable amounts */}
-      <div className="rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full">
+      <div className="rounded-xl border border-gray-200 overflow-x-auto">
+        <table className="w-full min-w-[500px]">
           <thead><tr className="bg-gray-50 border-b border-gray-200">
             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Employee</th>
             <th className="px-3 py-2 text-right text-xs font-semibold text-orange-500 uppercase">Hours</th>

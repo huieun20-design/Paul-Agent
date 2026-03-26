@@ -132,7 +132,7 @@ export default function TodoPage() {
     <div className="max-w-[1300px] mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Todo</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Todo</h1>
           <p className="mt-1 text-sm text-gray-400">
             {stats.active} active · {stats.high} high priority · {stats.followup} need follow-up
           </p>
@@ -153,27 +153,31 @@ export default function TodoPage() {
       </div>
 
       {/* Quick Add */}
-      <div className="mt-5 flex items-center gap-3 card p-4">
-        <Plus className="h-5 w-5 text-gray-400" />
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Add a new task..."
-          value={newTitle}
-          onChange={(e) => setNewTitle(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTodo(); } }}
-          className="flex-1 text-sm focus:outline-none bg-transparent"
-          disabled={adding}
-        />
-        <select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs">
-          <option value="HIGH">High</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="LOW">Low</option>
-        </select>
-        <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs" />
-        <button onClick={addTodo} disabled={!newTitle.trim() || adding} className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50">
-          {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Add</>}
-        </button>
+      <div className="mt-5 flex flex-col md:flex-row items-stretch md:items-center gap-3 card p-4">
+        <div className="flex items-center gap-3 flex-1">
+          <Plus className="h-5 w-5 text-gray-400 flex-shrink-0" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Add a new task..."
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTodo(); } }}
+            className="flex-1 text-sm focus:outline-none bg-transparent"
+            disabled={adding}
+          />
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select value={newPriority} onChange={(e) => setNewPriority(e.target.value)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs min-h-[44px] md:min-h-0">
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+          </select>
+          <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs min-h-[44px] md:min-h-0" />
+          <button onClick={addTodo} disabled={!newTitle.trim() || adding} className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50 min-h-[44px] md:min-h-0">
+            {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Plus className="h-4 w-4" /> Add</>}
+          </button>
+        </div>
       </div>
 
       {/* Todo List */}
