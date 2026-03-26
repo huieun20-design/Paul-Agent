@@ -1059,6 +1059,47 @@ function AttachmentSection({ emailId, attachments }: { emailId: string; attachme
   );
 }
 
+function ContactInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  const [suggestions, setSuggestions] = useState<{ email: string; name: string }[]>([]);
+  const [show, setShow] = useState(false);
+
+  const search = async (q: string) => {
+    if (q.length < 1) { setSuggestions([]); setShow(false); return; }
+    const res = await fetch(`/api/email/contacts?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) { setSuggestions(data); setShow(true); } else { setShow(false); }
+  };
+
+  return (
+    <div className="flex-1 relative">
+      <input type="text" value={value}
+        onChange={e => { onChange(e.target.value); const parts = e.target.value.split(","); search(parts[parts.length - 1].trim()); }}
+        onFocus={() => { if (suggestions.length > 0) setShow(true); }}
+        onBlur={() => setTimeout(() => setShow(false), 200)}
+        placeholder={placeholder}
+        className="w-full border-0 bg-transparent px-1 py-0.5 text-sm text-gray-800 focus:outline-none" />
+      {show && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+          {suggestions.map(c => (
+            <button key={c.email} type="button" onMouseDown={() => {
+              const parts = value.split(",").map(s => s.trim()).filter(Boolean);
+              parts[parts.length - 1] = c.email;
+              onChange(parts.join(", ") + ", ");
+              setShow(false);
+            }} className="flex items-center gap-3 w-full px-3 py-2 hover:bg-gray-50 text-left">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-600">{c.name[0]?.toUpperCase()}</div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
+                <p className="text-xs text-gray-400 truncate">{c.email}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGenerateReply, onCancel, onSent, emailAccounts }: {
   email: Email; mode: "reply" | "forward"; aiReply: string; setAiReply: (v: string) => void;
   generatingReply: boolean; onGenerateReply: (tone: string) => void; onCancel: () => void; onSent: () => void;
@@ -1087,31 +1128,15 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
     }
   }, [aiReply]);
 
-  const savedSelection = useRef<Range | null>(null);
-
-  // Save selection before clicking toolbar buttons
-  const saveSelection = () => {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) savedSelection.current = sel.getRangeAt(0).cloneRange();
-  };
-
-  const restoreSelection = () => {
-    const sel = window.getSelection();
-    if (sel && savedSelection.current) {
-      sel.removeAllRanges();
-      sel.addRange(savedSelection.current);
-    }
-  };
-
+  // execCommand wrapper — prevent toolbar from stealing focus
   const exec = (cmd: string, value?: string) => {
     editorRef.current?.focus();
-    restoreSelection();
-    setTimeout(() => document.execCommand(cmd, false, value), 0);
+    document.execCommand(cmd, false, value);
   };
 
   const handleLink = () => {
     const url = prompt("Enter URL:");
-    if (url) exec("createLink", url);
+    if (url) { editorRef.current?.focus(); document.execCommand("createLink", false, url); }
   };
 
   const handleSend = async () => {
@@ -1167,69 +1192,31 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
     }
   };
 
-  // Contact autocomplete
-  const [suggestions, setSuggestions] = useState<{ email: string; name: string }[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
-  const searchContacts = async (query: string) => {
-    if (query.length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
-    const res = await fetch(`/api/email/contacts?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
-    setSuggestions(data);
-    setShowSuggestions(data.length > 0);
-  };
-
-  const addContact = (email: string) => {
-    const current = forwardTo ? forwardTo + ", " : "";
-    setForwardTo(current + email);
-    setShowSuggestions(false);
-  };
-
-  const fieldClass = "flex-1 border-0 bg-transparent px-1 py-0.5 text-sm text-gray-800 focus:outline-none";
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: string; name: string } | null>(null);
 
   return (
     <div className="border-t border-gray-200">
       <div className="bg-white">
-        {/* Header fields — Apple Mail style */}
+        {/* Header fields */}
         <div className="border-b border-gray-100 px-6 py-1">
-          <div className="relative flex items-center py-1.5 border-b border-gray-100">
+          <div className="flex items-center py-1.5 border-b border-gray-100">
             <span className="text-sm text-gray-400 w-14">To:</span>
             {mode === "reply" ? (
               <span className="text-sm text-gray-800">{email.from}</span>
             ) : (
-              <div className="flex-1 relative">
-                <input type="text" value={forwardTo}
-                  onChange={e => { setForwardTo(e.target.value); const parts = e.target.value.split(","); searchContacts(parts[parts.length - 1].trim()); }}
-                  onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder="Type name or email..." className={fieldClass} />
-                {showSuggestions && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
-                    {suggestions.map(c => (
-                      <button key={c.email} type="button" onMouseDown={() => addContact(c.email)}
-                        className="flex items-center gap-3 w-full px-3 py-2 hover:bg-gray-50 text-left">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-600">{c.name[0]?.toUpperCase()}</div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{c.name}</p>
-                          <p className="text-xs text-gray-400 truncate">{c.email}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ContactInput value={forwardTo} onChange={setForwardTo} placeholder="Type name or email..." />
             )}
           </div>
           {showCc && (
             <div className="flex items-center py-1.5 border-b border-gray-100">
               <span className="text-sm text-gray-400 w-14">Cc:</span>
-              <input type="text" value={cc} onChange={e => setCc(e.target.value)} placeholder="Comma separated emails..." className={fieldClass} />
+              <ContactInput value={cc} onChange={setCc} placeholder="Type name or email..." />
             </div>
           )}
           {showBcc && (
             <div className="flex items-center py-1.5 border-b border-gray-100">
               <span className="text-sm text-gray-400 w-14">Bcc:</span>
-              <input type="text" value={bcc} onChange={e => setBcc(e.target.value)} placeholder="Comma separated emails..." className={fieldClass} />
+              <ContactInput value={bcc} onChange={setBcc} placeholder="Type name or email..." />
             </div>
           )}
           <div className="flex items-center py-1.5 border-b border-gray-100">
@@ -1254,7 +1241,7 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
         </div>
 
         {/* Toolbar — Gmail style */}
-        <div className="flex flex-wrap items-center gap-0.5 px-4 py-1 border-b border-gray-100 bg-gray-50/50" onMouseDown={saveSelection}>
+        <div className="flex flex-wrap items-center gap-0.5 px-4 py-1 border-b border-gray-100 bg-gray-50/50" onMouseDown={e => { e.preventDefault(); }}>
           {/* AI tone */}
           {["friendly", "formal", "firm", "negotiation"].map(tone => (
             <button key={tone} onClick={() => onGenerateReply(tone)} disabled={generatingReply}
@@ -1357,9 +1344,6 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
           contentEditable
           suppressContentEditableWarning
           onInput={() => { if (editorRef.current) setAiReply(editorRef.current.innerHTML); }}
-          onBlur={saveSelection}
-          onKeyUp={saveSelection}
-          onMouseUp={saveSelection}
           className="px-6 py-4 min-h-[200px] text-sm text-gray-800 leading-relaxed focus:outline-none"
           style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
           data-placeholder={generatingReply ? "Generating AI reply..." : "Compose your message..."}
@@ -1367,20 +1351,45 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
 
         {/* Attachments */}
         {attachments.length > 0 && (
-          <div className="px-6 pb-3 flex flex-wrap gap-2">
-            {attachments.map((file, i) => {
-              const isLarge = file.size > 3 * 1024 * 1024;
-              const sizeStr = file.size > 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(1)}MB` : `${(file.size / 1024).toFixed(0)}KB`;
-              return (
-                <div key={i} className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-1.5", isLarge ? "bg-amber-50 border-amber-200" : "bg-gray-50 border-gray-200")}>
-                  <Paperclip className="h-3 w-3 text-gray-400" />
-                  <span className="text-xs text-gray-600 max-w-40 truncate">{file.name}</span>
-                  <span className="text-[10px] text-gray-400">{sizeStr}</span>
-                  {isLarge && <span className="text-[9px] text-amber-600 font-medium">link</span>}
-                  <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500"><X className="h-3 w-3" /></button>
-                </div>
-              );
-            })}
+          <div className="px-6 pb-3">
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((file, i) => {
+                const isLarge = file.size > 3 * 1024 * 1024;
+                const sizeStr = file.size > 1024 * 1024 ? `${(file.size / 1024 / 1024).toFixed(1)}MB` : `${(file.size / 1024).toFixed(0)}KB`;
+                const isImage = file.type.startsWith("image/");
+                const preview = isImage ? URL.createObjectURL(file) : null;
+                return (
+                  <div key={i} className={cn("rounded-lg border overflow-hidden", isLarge ? "border-amber-200" : "border-gray-200")}>
+                    {preview && (
+                      <button onClick={() => setPreviewFile({ url: preview, type: file.type, name: file.name })} className="block">
+                        <img src={preview} alt={file.name} className="w-20 h-16 object-cover" />
+                      </button>
+                    )}
+                    <div className={cn("flex items-center gap-1.5 px-2 py-1", isLarge ? "bg-amber-50" : "bg-gray-50")}>
+                      <Paperclip className="h-2.5 w-2.5 text-gray-400 flex-shrink-0" />
+                      <span className="text-[11px] text-gray-600 max-w-24 truncate">{file.name}</span>
+                      <span className="text-[9px] text-gray-400">{sizeStr}</span>
+                      {isLarge && <span className="text-[8px] text-amber-600 font-medium">link</span>}
+                      <button onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500 ml-auto"><X className="h-2.5 w-2.5" /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {/* File preview modal */}
+        {previewFile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setPreviewFile(null)}>
+            <div className="relative max-w-3xl max-h-[85vh]" onClick={e => e.stopPropagation()}>
+              <button onClick={() => setPreviewFile(null)} className="absolute -top-8 right-0 text-white text-sm flex items-center gap-1"><X className="h-4 w-4" />Close</button>
+              <p className="absolute -top-8 left-0 text-white/70 text-sm truncate max-w-md">{previewFile.name}</p>
+              {previewFile.type.startsWith("image/") ? (
+                <img src={previewFile.url} alt={previewFile.name} className="max-h-[80vh] rounded-xl" />
+              ) : previewFile.type === "application/pdf" ? (
+                <iframe src={previewFile.url} className="w-[700px] h-[80vh] rounded-xl bg-white" />
+              ) : null}
+            </div>
           </div>
         )}
 
