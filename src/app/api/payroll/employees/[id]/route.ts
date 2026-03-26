@@ -17,6 +17,11 @@ export async function PATCH(
       ...(body.name && { name: body.name }),
       ...(body.position !== undefined && { position: body.position }),
       ...(body.salary !== undefined && { salary: parseFloat(body.salary) }),
+      ...(body.payType && { payType: body.payType }),
+      ...(body.cashAmount !== undefined && { cashAmount: body.cashAmount ? parseFloat(body.cashAmount) : null }),
+      ...(body.payrollAmount !== undefined && { payrollAmount: body.payrollAmount ? parseFloat(body.payrollAmount) : null }),
+      ...(body.payFrequency && { payFrequency: body.payFrequency }),
+      ...(body.notes !== undefined && { notes: body.notes }),
       ...(body.isActive !== undefined && { isActive: body.isActive }),
     },
   });

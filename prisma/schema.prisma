@@ -454,31 +454,52 @@ enum TodoSource {
 // ============================================
 
 model Employee {
-  id         String   @id @default(cuid())
-  companyId  String
-  name       String
-  position   String?
-  salary     Float
-  currency   String   @default("USD")
-  startDate  DateTime @default(now())
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String   @id @default(cuid())
+  companyId    String
+  name         String
+  position     String?
+  salary       Float
+  payType      PayType  @default(PAYROLL)
+  cashAmount   Float?
+  payrollAmount Float?
+  payFrequency String   @default("MONTHLY")
+  currency     String   @default("USD")
+  startDate    DateTime @default(now())
+  isActive     Boolean  @default(true)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   payrolls Payroll[]
 }
 
+enum PayType {
+  PAYROLL
+  CASH
+  MIXED
+}
+
 model Payroll {
-  id         String   @id @default(cuid())
-  companyId  String
-  employeeId String
-  amount     Float
-  currency   String   @default("USD")
-  period     String
-  paidAt     DateTime @default(now())
-  createdAt  DateTime @default(now())
+  id           String      @id @default(cuid())
+  companyId    String
+  employeeId   String
+  amount       Float
+  cashAmount   Float       @default(0)
+  payrollAmount Float      @default(0)
+  currency     String      @default("USD")
+  period       String
+  status       PayStatus   @default(PAID)
+  notes        String?
+  paidAt       DateTime    @default(now())
+  createdAt    DateTime    @default(now())
 
   company  Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+enum PayStatus {
+  PAID
+  PENDING
+  PARTIAL
 }

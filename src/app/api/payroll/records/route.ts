@@ -12,7 +12,7 @@ export async function GET() {
   const records = await prisma.payroll.findMany({
     where: { companyId },
     orderBy: { paidAt: "desc" },
-    take: 100,
+    take: 200,
     include: {
       employee: { select: { name: true, position: true } },
     },
@@ -28,14 +28,16 @@ export async function POST(request: Request) {
   const companyId = await getUserCompanyId(user.id);
   if (!companyId) return badRequest("No company found");
 
-  const { employeeId, amount, currency, period } = await request.json();
-  if (!employeeId || !amount || !period) return badRequest("employeeId, amount, and period are required");
+  const { employeeId, amount, cashAmount, payrollAmount, currency, period } = await request.json();
+  if (!employeeId || !period) return badRequest("employeeId and period required");
 
   const record = await prisma.payroll.create({
     data: {
       companyId,
       employeeId,
-      amount: parseFloat(amount),
+      amount: parseFloat(amount) || 0,
+      cashAmount: parseFloat(cashAmount) || 0,
+      payrollAmount: parseFloat(payrollAmount) || 0,
       currency: currency || "USD",
       period,
     },
