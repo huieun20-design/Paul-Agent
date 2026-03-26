@@ -173,7 +173,7 @@ export default function EmailPage() {
   const [aiReply, setAiReply] = useState("");
   const [generatingReply, setGeneratingReply] = useState(false);
 
-  const fetchEmails = useCallback(async (retry = 0) => {
+  const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ folder, limit: "200" });
@@ -182,20 +182,12 @@ export default function EmailPage() {
       if (filterAccount !== "all") params.set("accountId", filterAccount);
 
       const res = await fetch(`/api/email?${params}`);
-      if (res.status === 401 && retry < 2) {
-        await new Promise(r => setTimeout(r, 1500));
-        return fetchEmails(retry + 1);
-      }
       const data = await res.json();
-      setEmails(data.emails || []);
-    } catch {
-      if (retry < 2) {
-        await new Promise(r => setTimeout(r, 1500));
-        return fetchEmails(retry + 1);
+      if (Array.isArray(data.emails)) {
+        setEmails(data.emails);
       }
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* ignore */ }
+    setLoading(false);
   }, [folder, search, category, filterAccount]);
 
   const fetchAccounts = useCallback(async (retry = 0) => {
