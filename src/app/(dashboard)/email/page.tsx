@@ -602,6 +602,22 @@ export default function EmailPage() {
             </button>
             <button
               onClick={() => {
+                // Mark as unread locally + sync to Gmail
+                setEmails(prev => prev.map(e => e.id === selectedEmail.id ? { ...e, isRead: false } : e));
+                fetch(`/api/email/${selectedEmail.id}`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ isRead: false }),
+                });
+                setSelectedEmail(null);
+              }}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+            >
+              <Mail className="h-4 w-4" />
+              Unread
+            </button>
+            <button
+              onClick={() => {
                 setReplyMode("reply");
                 setAiReply("");
               }}

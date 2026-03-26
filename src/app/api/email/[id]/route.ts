@@ -57,11 +57,22 @@ export async function PATCH(
   const { id } = await params;
   const body = await request.json();
 
+  // If marking as read/unread, sync to Gmail
+  if (body.isRead !== undefined) {
+    const emailData = await prisma.email.findUnique({ where: { id }, select: { messageId: true, emailAccountId: true } });
+    if (emailData) {
+      try {
+        markGmailEmailRead(emailData.emailAccountId, emailData.messageId, body.isRead).catch(() => {});
+      } catch { /* ignore */ }
+    }
+  }
+
   const email = await prisma.email.update({
     where: { id },
     data: {
       ...(body.category !== undefined && { category: body.category }),
       ...(body.priority !== undefined && { priority: body.priority }),
+      ...(body.isRead !== undefined && { isRead: body.isRead }),
     },
   });
 
