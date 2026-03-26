@@ -158,12 +158,12 @@ export default function DashboardPage() {
   return (
     <div className="max-w-[1300px] mx-auto space-y-5">
       {/* HEADER + Motivation */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-2 md:space-y-0 md:flex md:items-center md:justify-between">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">{getGreeting()}, Paul</h1>
-          <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            {quote.emoji} {quote.text}
+          <p className="text-xs md:text-sm text-gray-400 mt-0.5 flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 md:h-3.5 md:w-3.5 text-amber-500 flex-shrink-0" />
+            <span>{quote.emoji} {quote.text}</span>
           </p>
         </div>
         <div className="relative">
