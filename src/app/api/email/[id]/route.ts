@@ -38,6 +38,30 @@ export async function GET(
   return NextResponse.json(email);
 }
 
+// PATCH /api/email/[id] — Update email (category, etc.)
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const body = await request.json();
+
+  const email = await prisma.email.update({
+    where: { id },
+    data: {
+      ...(body.category !== undefined && { category: body.category }),
+      ...(body.priority !== undefined && { priority: body.priority }),
+    },
+  });
+
+  return NextResponse.json(email);
+}
+
 // DELETE /api/email/[id] — Delete email
 export async function DELETE(
   request: Request,

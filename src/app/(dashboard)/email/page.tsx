@@ -17,6 +17,7 @@ import {
   Plus,
   Settings,
   X,
+  Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
@@ -58,8 +59,7 @@ const FOLDERS = [
   { key: "TRASH", label: "Trash" },
 ];
 
-const CATEGORIES = [
-  "All",
+const DEFAULT_CATEGORIES = [
   "ORDER",
   "PAYMENT",
   "INVOICE",
@@ -131,6 +131,9 @@ export default function EmailPage() {
   const [category, setCategory] = useState("All");
   const [search, setSearch] = useState("");
   const [filterAccount, setFilterAccount] = useState("all");
+  const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
+  const [showCategoryEdit, setShowCategoryEdit] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -168,6 +171,14 @@ export default function EmailPage() {
       if (Array.isArray(data)) setEmailAccounts(data);
     } catch { /* ignore */ }
     setAccountsLoaded(true);
+  }, []);
+
+  // Load custom categories from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("emailCategories");
+      if (saved) setCategories(JSON.parse(saved));
+    }
   }, []);
 
   useEffect(() => {
@@ -378,8 +389,8 @@ export default function EmailPage() {
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-1 overflow-x-auto border-b border-gray-200 px-4 py-2">
-          {CATEGORIES.map((cat) => {
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 px-4 py-2">
+          {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
             return (
@@ -390,13 +401,20 @@ export default function EmailPage() {
                   "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                   cat === "All"
                     ? isActive ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    : isActive ? style?.active : `${style?.bg} ${style?.text} hover:opacity-80`
+                    : isActive ? (style?.active || "bg-gray-300 text-gray-800") : `${style?.bg || "bg-gray-50"} ${style?.text || "text-gray-500"} hover:opacity-80`
                 )}
               >
                 {cat === "All" ? "All" : `# ${cat}`}
               </button>
             );
           })}
+          <button
+            onClick={() => setShowCategoryEdit(true)}
+            className="ml-1 rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 flex-shrink-0"
+            title="Edit categories"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
         </div>
 
         {/* Email List */}
@@ -563,19 +581,33 @@ export default function EmailPage() {
                 {selectedEmail.subject || "(no subject)"}
               </h2>
 
-              {/* Badges */}
-              <div className="mt-2 flex items-center gap-2">
-                {selectedEmail.category && (
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      categoryColors[selectedEmail.category] ||
-                        "bg-gray-100 text-gray-600"
-                    )}
-                  >
-                    {selectedEmail.category}
-                  </span>
-                )}
+              {/* Category selector */}
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                {categories.map(cat => {
+                  const style = categoryStyles[cat];
+                  const isActive = selectedEmail.category === cat;
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => {
+                        const newCat = isActive ? null : cat;
+                        fetch(`/api/email/${selectedEmail.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ category: newCat }),
+                        });
+                        setSelectedEmail({ ...selectedEmail, category: newCat });
+                        setEmails(prev => prev.map(e => e.id === selectedEmail.id ? { ...e, category: newCat } : e));
+                      }}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[10px] font-semibold transition-all",
+                        isActive ? style?.active : `${style?.bg} ${style?.text} opacity-50 hover:opacity-100`
+                      )}
+                    >
+                      # {cat}
+                    </button>
+                  );
+                })}
                 {selectedEmail.priority && (
                   <span
                     className={cn(
@@ -802,6 +834,66 @@ export default function EmailPage() {
       {/* Accounts Modal */}
       <Modal isOpen={showAccounts} onClose={() => { setShowAccounts(false); fetchAccounts(); fetchEmails(); }} title="Email Accounts" size="md">
         <AccountsManager accounts={emailAccounts} onRefresh={fetchAccounts} />
+      </Modal>
+
+      {/* Category Edit Modal */}
+      <Modal isOpen={showCategoryEdit} onClose={() => setShowCategoryEdit(false)} title="Edit Categories" size="sm">
+        <div className="space-y-3">
+          {categories.map((cat) => {
+            const style = categoryStyles[cat];
+            return (
+              <div key={cat} className="flex items-center gap-3">
+                <span className={cn("rounded-full px-3 py-1 text-xs font-semibold", style?.bg || "bg-gray-100", style?.text || "text-gray-600")}>
+                  # {cat}
+                </span>
+                <div className="flex-1" />
+                {!DEFAULT_CATEGORIES.includes(cat) && (
+                  <button
+                    onClick={() => {
+                      const updated = categories.filter(c => c !== cat);
+                      setCategories(updated);
+                      localStorage.setItem("emailCategories", JSON.stringify(updated));
+                    }}
+                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <div className="flex gap-2 pt-2 border-t border-gray-100">
+            <input
+              type="text"
+              placeholder="New category name..."
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value.toUpperCase().replace(/[^A-Z_]/g, ""))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newCategoryName) {
+                  const updated = [...categories, newCategoryName];
+                  setCategories(updated);
+                  localStorage.setItem("emailCategories", JSON.stringify(updated));
+                  setNewCategoryName("");
+                }
+              }}
+              className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm"
+            />
+            <button
+              onClick={() => {
+                if (!newCategoryName) return;
+                const updated = [...categories, newCategoryName];
+                setCategories(updated);
+                localStorage.setItem("emailCategories", JSON.stringify(updated));
+                setNewCategoryName("");
+              }}
+              disabled={!newCategoryName}
+              className="rounded-xl bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-400">Default categories cannot be removed. Custom categories use uppercase letters and underscores.</p>
+        </div>
       </Modal>
     </div>
   );
