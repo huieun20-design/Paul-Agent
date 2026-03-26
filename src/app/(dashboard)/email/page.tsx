@@ -146,7 +146,7 @@ export default function EmailPage() {
   const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ folder, limit: "30" });
+      const params = new URLSearchParams({ folder, limit: "200" });
       if (search) params.set("search", search);
       if (category !== "All") params.set("category", category);
       if (filterAccount !== "all") params.set("accountId", filterAccount);
