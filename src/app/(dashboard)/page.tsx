@@ -173,9 +173,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ROW 1 — Family + Weather + Calendar */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         {/* Family Photos */}
-        <div className="col-span-4 card p-4">
+        <div className="md:col-span-4 card p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5"><Heart className="h-3.5 w-3.5 text-pink-400" />Family</span>
             <div className="flex items-center gap-2">
@@ -217,14 +217,14 @@ export default function DashboardPage() {
         <WeatherCard weather={weather} />
 
         {/* Calendar */}
-        <div className="col-span-4 card p-5">
+        <div className="md:col-span-4 card p-5">
           <MiniCalendar />
         </div>
       </div>
 
       {/* ROW 2 — Stats Cards */}
       {(
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
           <StatCard icon={<Landmark className="h-4 w-4 text-blue-500" />} label="Cash Balance" value={`$${data.cashBalance.toLocaleString()}`} />
           <StatCard icon={<Mail className="h-4 w-4 text-violet-500" />} label="Unread Emails" value={`${data.recentEmails}`} />
           <StatCard icon={<CheckSquare className="h-4 w-4 text-emerald-500" />} label="Open Tasks" value={`${data.openTodos}`} badge={data.urgentTodos > 0 ? `${data.urgentTodos} urgent` : undefined} />
@@ -235,9 +235,9 @@ export default function DashboardPage() {
 
       {/* ROW 3 — Tasks + Invoice Overview + Cash Flow */}
       {(
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* Tasks */}
-          <div className="col-span-3 card p-5">
+          <div className="md:col-span-3 card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-900">My Tasks</h3>
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-[10px] font-bold text-gray-500">{todos.length}</span>
@@ -258,7 +258,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Invoice Overview */}
-          <div className="col-span-5 card p-5">
+          <div className="md:col-span-5 card p-5">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-semibold text-gray-900">Invoice Overview</h3>
               <ArrowUpRight className="h-4 w-4 text-gray-300" />
@@ -272,7 +272,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Cash Flow */}
-          <div className="col-span-4 card p-5">
+          <div className="md:col-span-4 card p-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Cash Flow · 30 Days</h3>
             <div className="space-y-2.5">
               <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-2.5">
