@@ -146,7 +146,7 @@ export default function EmailPage() {
   const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ folder });
+      const params = new URLSearchParams({ folder, limit: "30" });
       if (search) params.set("search", search);
       if (category !== "All") params.set("category", category);
       if (filterAccount !== "all") params.set("accountId", filterAccount);
@@ -252,9 +252,10 @@ export default function EmailPage() {
   };
 
   const handleDelete = async (emailId: string) => {
-    await fetch(`/api/email/${emailId}`, { method: "DELETE" });
+    // Optimistic UI update first
     setEmails((prev) => prev.filter((e) => e.id !== emailId));
     if (selectedEmail?.id === emailId) setSelectedEmail(null);
+    fetch(`/api/email/${emailId}`, { method: "DELETE" });
   };
 
   const handleSelectEmail = async (email: Email) => {
