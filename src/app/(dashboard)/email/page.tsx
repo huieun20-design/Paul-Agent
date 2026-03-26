@@ -1171,19 +1171,25 @@ function ReplySection({ email, mode, aiReply, setAiReply, generatingReply, onGen
   const exec = (cmd: string, value?: string) => {
     const editor = editorRef.current;
     if (!editor) return;
-    // Ensure editor has focus and selection
-    if (document.activeElement !== editor) {
-      editor.focus();
-      // Place cursor at end if no selection
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount === 0) {
-        const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
+
+    // If editor is empty, add a space so list commands work
+    if (!editor.textContent?.trim() && (cmd === "insertUnorderedList" || cmd === "insertOrderedList")) {
+      editor.innerHTML = "<br>";
     }
+
+    // Ensure editor has focus
+    editor.focus();
+
+    // Ensure there's a selection/cursor
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) {
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+
     document.execCommand(cmd, false, value);
   };
 
