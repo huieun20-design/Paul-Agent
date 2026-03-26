@@ -1,12 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-// Free weather API (no key needed) - uses ip-based location
-export async function GET() {
+// GET /api/weather?lat=40.7&lon=-74.0
+export async function GET(request: NextRequest) {
   try {
-    const res = await fetch(
-      "https://wttr.in/?format=j1",
-      { next: { revalidate: 1800 } } // cache 30min
-    );
+    const lat = request.nextUrl.searchParams.get("lat");
+    const lon = request.nextUrl.searchParams.get("lon");
+
+    // Use coordinates if provided, otherwise fall back to IP
+    const location = lat && lon ? `${lat},${lon}` : "";
+    const url = `https://wttr.in/${location}?format=j1`;
+
+    const res = await fetch(url, { next: { revalidate: 1800 } });
     const data = await res.json();
 
     const current = data.current_condition?.[0];
@@ -24,14 +28,8 @@ export async function GET() {
     });
   } catch {
     return NextResponse.json({
-      temp: "?",
-      feelsLike: "?",
-      desc: "Unable to fetch",
-      humidity: "?",
-      windSpeed: "?",
-      city: "Unknown",
-      country: "",
-      weatherCode: "113",
+      temp: "?", feelsLike: "?", desc: "Unable to fetch",
+      humidity: "?", windSpeed: "?", city: "Unknown", country: "", weatherCode: "113",
     });
   }
 }

@@ -105,7 +105,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch("/api/dashboard").then(r => r.json()).then(d => { if (d && !d.error) setData(d); }).catch(() => {});
-    fetch("/api/weather").then(r => r.json()).then(setWeather).catch(() => {});
+    // Get browser location for accurate weather
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetch(`/api/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`).then(r => r.json()).then(setWeather).catch(() => {}),
+        () => fetch("/api/weather").then(r => r.json()).then(setWeather).catch(() => {}) // fallback to IP
+      );
+    } else {
+      fetch("/api/weather").then(r => r.json()).then(setWeather).catch(() => {});
+    }
     fetch("/api/baby-photo").then(r => r.json()).then(r => { if (Array.isArray(r)) setPhotos(r); }).catch(() => {});
     fetch("/api/todos").then(r => r.json()).then((d: unknown) => { if (Array.isArray(d)) setTodos(d.slice(0, 4)); }).catch(() => {});
   }, []);
