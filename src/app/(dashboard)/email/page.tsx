@@ -345,11 +345,57 @@ export default function EmailPage() {
     <div>
       {/* Email List */}
       {!selectedEmail && (
-      <div className="flex flex-col">
+      <div>
 
-        {/* Toolbar */}
-        <div className="flex items-center gap-2">
-          {/* Folder tabs */}
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Email</h1>
+            <p className="mt-1 text-sm text-gray-500">{emails.length} emails</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {emailAccounts.length > 1 && (
+              <select
+                value={filterAccount}
+                onChange={(e) => setFilterAccount(e.target.value)}
+                className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 focus:outline-none"
+              >
+                <option value="all">All Accounts</option>
+                {emailAccounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>{acc.email}</option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={() => setShowAccounts(true)}
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+              title="Email accounts"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleSync()}
+              disabled={syncing}
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+              title="Sync emails"
+            >
+              <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-6 flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search emails..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none"
+            />
+          </div>
           <div className="flex gap-1">
             {FOLDERS.map((f) => (
               <button
@@ -359,66 +405,20 @@ export default function EmailPage() {
                   setSelectedEmail(null);
                 }}
                 className={cn(
-                  "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                  "rounded-lg px-3 py-2 text-sm font-medium",
                   folder === f.key
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+                    ? "bg-blue-100 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-100"
                 )}
               >
                 {f.label}
               </button>
             ))}
           </div>
-
-          {/* Account filter */}
-          {emailAccounts.length > 1 && (
-            <select
-              value={filterAccount}
-              onChange={(e) => setFilterAccount(e.target.value)}
-              className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 focus:outline-none"
-            >
-              <option value="all">All Accounts</option>
-              {emailAccounts.map(acc => (
-                <option key={acc.id} value={acc.id}>{acc.email}</option>
-              ))}
-            </select>
-          )}
-
-          <div className="flex-1" />
-
-          <button
-            onClick={() => setShowAccounts(true)}
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-            title="Email accounts"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleSync()}
-            disabled={syncing}
-            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-            title="Sync emails"
-          >
-            <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="mt-6 flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search emails..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
-            />
-          </div>
         </div>
 
         {/* Category tabs — draggable */}
-        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap mt-6 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap mt-3 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
