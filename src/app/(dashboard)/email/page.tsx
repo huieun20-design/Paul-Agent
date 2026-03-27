@@ -342,18 +342,18 @@ export default function EmailPage() {
   };
 
   return (
-    <div>
+    <div className="max-w-[1300px] mx-auto">
       {/* Email List */}
       {!selectedEmail && (
       <div>
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Email</h1>
-            <p className="mt-1 text-sm text-gray-500">{emails.length} emails</p>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Email</h1>
+            <p className="text-sm text-gray-400 mt-0.5">{emails.length} emails</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2 flex-wrap">
             {emailAccounts.length > 1 && (
               <select
                 value={filterAccount}
@@ -368,24 +368,22 @@ export default function EmailPage() {
             )}
             <button
               onClick={() => setShowAccounts(true)}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
-              title="Email accounts"
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4 text-gray-400" /> Accounts
             </button>
             <button
               onClick={() => handleSync()}
               disabled={syncing}
-              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 disabled:opacity-50"
-              title="Sync emails"
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={cn("h-4 w-4", syncing && "animate-spin")} />
+              <RefreshCw className={cn("h-4 w-4 text-gray-400", syncing && "animate-spin")} /> Sync
             </button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-5 flex items-center gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -466,7 +464,7 @@ export default function EmailPage() {
         </div>
 
         {/* Email List */}
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="mt-5 rounded-2xl border border-gray-200 bg-white overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -568,7 +566,7 @@ export default function EmailPage() {
       {selectedEmail && (
         <div className="flex flex-col">
           {/* Detail Header */}
-          <div className="flex items-center gap-2 border-b border-gray-200 pb-4 mb-6">
+          <div className="flex items-center gap-2 border-b border-gray-200 pb-3 mb-5">
             <button
               onClick={() => {
                 setSelectedEmail(null);
