@@ -217,8 +217,11 @@ export default function EmailPage() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("connected") === "true") {
-        setTimeout(() => { fetchAccounts(); fetchEmails(); }, 1000);
         window.history.replaceState({}, "", "/email");
+        setTimeout(async () => {
+          await fetchAccounts();
+          handleSync();
+        }, 500);
       }
       if (params.get("error")) {
         const detail = params.get("detail") || params.get("error");
