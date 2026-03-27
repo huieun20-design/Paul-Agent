@@ -176,7 +176,7 @@ export default function EmailPage() {
   const fetchEmails = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ folder, limit: "200" });
+      const params = new URLSearchParams({ folder, limit: "1000" });
       if (search) params.set("search", search);
       if (category !== "All") params.set("category", category);
       if (filterAccount !== "all") params.set("accountId", filterAccount);
@@ -241,7 +241,7 @@ export default function EmailPage() {
     try {
       const payload = recategorizeOnly
         ? { recategorize: true, customCategories: categoryKeywords }
-        : { maxResults: 100, customCategories: categoryKeywords };
+        : { maxResults: 500, customCategories: categoryKeywords };
 
       const res = await fetch("/api/email/sync", {
         method: "POST",

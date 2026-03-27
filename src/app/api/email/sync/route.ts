@@ -63,11 +63,11 @@ export async function POST(request: NextRequest) {
     try {
       let synced = 0;
       if (account.provider === "GMAIL") {
-        const inbox = await syncGmailEmails(account.id, body.maxResults || 100, body.customCategories);
-        const sent = await syncGmailSentEmails(account.id, body.maxResults || 100, body.customCategories);
+        const inbox = await syncGmailEmails(account.id, body.maxResults || 500, body.customCategories);
+        const sent = await syncGmailSentEmails(account.id, body.maxResults || 500, body.customCategories);
         synced = inbox + sent;
       } else if (account.provider === "OUTLOOK") {
-        synced = await syncOutlookEmails(account.id, body.maxResults || 100, body.customCategories);
+        synced = await syncOutlookEmails(account.id, body.maxResults || 500, body.customCategories);
       } else {
         results.push({ email: account.email, error: `Provider ${account.provider} not supported` });
         continue;

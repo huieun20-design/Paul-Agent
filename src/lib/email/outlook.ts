@@ -53,10 +53,10 @@ async function graphFetch(emailAccountId: string, path: string): Promise<Respons
 
 export async function syncOutlookEmails(
   emailAccountId: string,
-  maxResults: number = 100,
+  maxResults: number = 500,
   customCategories?: Record<string, string[]>
 ): Promise<number> {
-  // Sync inbox + sent (100 each = 200 total)
+  // Sync inbox + sent (500 each = 1000 total)
   const [inboxRes, sentRes] = await Promise.all([
     graphFetch(emailAccountId, `/mailFolders/inbox/messages?$top=${maxResults}&$orderby=receivedDateTime desc&$select=id,subject,from,toRecipients,ccRecipients,body,receivedDateTime,isRead,hasAttachments`),
     graphFetch(emailAccountId, `/mailFolders/sentitems/messages?$top=${maxResults}&$orderby=receivedDateTime desc&$select=id,subject,from,toRecipients,ccRecipients,body,receivedDateTime,isRead,hasAttachments`),
