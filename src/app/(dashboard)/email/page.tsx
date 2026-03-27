@@ -361,7 +361,7 @@ export default function EmailPage() {
         )}
       >
         {/* Toolbar */}
-        <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 flex-shrink-0">
           {/* Folder tabs */}
           <div className="flex gap-1">
             {FOLDERS.map((f) => (
@@ -417,7 +417,7 @@ export default function EmailPage() {
         </div>
 
         {/* Search */}
-        <div className="border-b border-gray-200 px-4 py-2">
+        <div className="border-b border-gray-200 px-4 py-2 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -431,7 +431,7 @@ export default function EmailPage() {
         </div>
 
         {/* Category tabs — draggable */}
-        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap border-b border-gray-200 px-4 py-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap flex-shrink-0 border-b border-gray-200 px-4 py-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
@@ -479,7 +479,7 @@ export default function EmailPage() {
         </div>
 
         {/* Email List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
