@@ -404,8 +404,8 @@ export default function EmailPage() {
         </div>
 
         {/* Search */}
-        <div className="mt-4">
-          <div className="relative max-w-sm">
+        <div className="mt-6 flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -418,7 +418,7 @@ export default function EmailPage() {
         </div>
 
         {/* Category tabs — draggable */}
-        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap mt-4 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap mt-6 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
@@ -466,7 +466,7 @@ export default function EmailPage() {
         </div>
 
         {/* Email List */}
-        <div className="mt-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-white overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -568,7 +568,7 @@ export default function EmailPage() {
       {selectedEmail && (
         <div className="flex flex-col">
           {/* Detail Header */}
-          <div className="flex items-center gap-2 border-b border-gray-200 pb-3 mb-4">
+          <div className="flex items-center gap-2 border-b border-gray-200 pb-4 mb-6">
             <button
               onClick={() => {
                 setSelectedEmail(null);
