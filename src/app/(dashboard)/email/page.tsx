@@ -195,10 +195,7 @@ export default function EmailPage() {
       const res = await fetch("/api/email/accounts");
       const data = await res.json();
       if (Array.isArray(data)) setEmailAccounts(data);
-    } catch {
-        return fetchAccounts(retry + 1);
-      }
-    }
+    } catch { /* ignore */ }
     setAccountsLoaded(true);
   }, []);
 
