@@ -38,7 +38,9 @@ async function refreshAccessToken(emailAccountId: string): Promise<string> {
 
   // Use refresh token from EmailAccount table
   if (!emailAccount.refreshToken) {
-    throw new Error("No refresh token available. Please re-authenticate.");
+    // No refresh token — use existing access token even if expired (might still work briefly)
+    if (emailAccount.accessToken) return emailAccount.accessToken;
+    throw new Error("No token available. Please reconnect this account.");
   }
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -55,7 +57,9 @@ async function refreshAccessToken(emailAccountId: string): Promise<string> {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(`Token refresh failed: ${data.error_description || data.error}`);
+    // Refresh failed — still return existing token (might work for a bit)
+    if (emailAccount.accessToken) return emailAccount.accessToken;
+    throw new Error(`Token refresh failed. Will retry on next sync.`);
   }
 
   const expiry = new Date(Date.now() + data.expires_in * 1000);

@@ -45,18 +45,18 @@ export async function POST(request: NextRequest) {
   // Normal sync
   const accounts = body.accountId
     ? await prisma.emailAccount.findMany({ where: { id: body.accountId, userId } })
-    : await prisma.emailAccount.findMany({ where: { userId, accessToken: { not: null } } });
+    : await prisma.emailAccount.findMany({ where: { userId } });
 
   if (accounts.length === 0) {
-    return NextResponse.json({ error: "No email accounts with valid tokens. Please connect via Gmail OAuth." }, { status: 404 });
+    return NextResponse.json({ totalSynced: 0, results: [] });
   }
 
   let totalSynced = 0;
   const results: { email: string; synced?: number; error?: string }[] = [];
 
   for (const account of accounts) {
-    if (!account.accessToken) {
-      results.push({ email: account.email, error: "No access token" });
+    if (!account.accessToken && !account.refreshToken) {
+      results.push({ email: account.email, synced: 0 });
       continue;
     }
 

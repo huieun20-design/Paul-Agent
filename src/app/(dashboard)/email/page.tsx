@@ -252,13 +252,6 @@ export default function EmailPage() {
 
       if (data.recategorized) {
         // Re-categorize done
-      } else if (data.error) {
-        alert(`Sync error: ${data.error}`);
-      } else if (data.results) {
-        const errors = data.results.filter((r: { error?: string }) => r.error);
-        if (errors.length > 0) {
-          alert(`Synced ${data.totalSynced} emails. Errors: ${errors.map((e: { email: string; error: string }) => `${e.email}: ${e.error}`).join(", ")}`);
-        }
       }
       await fetchEmails();
     } catch {

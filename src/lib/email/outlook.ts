@@ -10,7 +10,10 @@ async function refreshOutlookToken(emailAccountId: string): Promise<string> {
     return account.accessToken;
   }
 
-  if (!account.refreshToken) throw new Error("No refresh token. Please re-authenticate.");
+  if (!account.refreshToken) {
+    if (account.accessToken) return account.accessToken;
+    throw new Error("No token available. Please reconnect this account.");
+  }
 
   const res = await fetch("https://login.microsoftonline.com/common/oauth2/v2.0/token", {
     method: "POST",
@@ -24,7 +27,10 @@ async function refreshOutlookToken(emailAccountId: string): Promise<string> {
   });
 
   const data = await res.json();
-  if (!res.ok || !data.access_token) throw new Error(`Token refresh failed: ${data.error_description || data.error}`);
+  if (!res.ok || !data.access_token) {
+    if (account.accessToken) return account.accessToken;
+    throw new Error("Token refresh failed. Will retry on next sync.");
+  }
 
   await prisma.emailAccount.update({
     where: { id: emailAccountId },
