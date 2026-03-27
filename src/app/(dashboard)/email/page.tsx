@@ -352,11 +352,11 @@ export default function EmailPage() {
   };
 
   return (
-    <div className="flex flex-col fixed inset-0 bottom-[60px] md:relative md:inset-auto md:bottom-auto md:h-[calc(100vh-3rem)] md:max-w-[1300px] md:mx-auto md:rounded-2xl overflow-hidden bg-white md:card z-20 md:z-auto">
+    <div className="flex flex-col fixed inset-0 bottom-[60px] md:bottom-0 md:left-16 md:right-0 md:top-0 overflow-hidden bg-white z-20">
       {/* Left Panel — Email List */}
       <div
         className={cn(
-          "flex flex-col border-r border-gray-200",
+          "flex flex-col border-r border-gray-200 min-h-0",
           selectedEmail ? "hidden" : "flex-1"
         )}
       >
