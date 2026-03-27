@@ -342,16 +342,13 @@ export default function EmailPage() {
   };
 
   return (
-    <div className="flex flex-col fixed inset-0 bottom-[60px] md:bottom-0 md:left-16 md:right-0 md:top-0 overflow-hidden bg-white z-20">
-      {/* Left Panel — Email List */}
-      <div
-        className={cn(
-          "flex flex-col border-r border-gray-200 min-h-0",
-          selectedEmail ? "hidden" : "flex-1"
-        )}
-      >
+    <div>
+      {/* Email List */}
+      {!selectedEmail && (
+      <div className="flex flex-col">
+
         {/* Toolbar */}
-        <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 flex-shrink-0">
+        <div className="flex items-center gap-2">
           {/* Folder tabs */}
           <div className="flex gap-1">
             {FOLDERS.map((f) => (
@@ -407,8 +404,8 @@ export default function EmailPage() {
         </div>
 
         {/* Search */}
-        <div className="border-b border-gray-200 px-4 py-2 flex-shrink-0">
-          <div className="relative">
+        <div className="mt-4">
+          <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -421,7 +418,7 @@ export default function EmailPage() {
         </div>
 
         {/* Category tabs — draggable */}
-        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap flex-shrink-0 border-b border-gray-200 px-4 py-2 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex items-center gap-1.5 overflow-x-auto flex-nowrap mt-4 scrollbar-hide" style={{ WebkitOverflowScrolling: "touch" }}>
           {["All", ...categories].map((cat) => {
             const style = categoryStyles[cat];
             const isActive = category === cat;
@@ -447,7 +444,7 @@ export default function EmailPage() {
                 onDragEnd={() => setDragCat(null)}
                 onClick={() => setCategory(cat)}
                 className={cn(
-                  "whitespace-nowrap flex-shrink-0 rounded-full px-2.5 py-1 md:px-3 md:py-1.5 text-xs font-semibold transition-all",
+                  "whitespace-nowrap flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all",
                   isDraggable && "cursor-grab active:cursor-grabbing",
                   dragCat === cat && "opacity-40 scale-95",
                   cat === "All"
@@ -469,7 +466,7 @@ export default function EmailPage() {
         </div>
 
         {/* Email List */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="mt-4 rounded-2xl border border-gray-200 bg-white overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -510,10 +507,7 @@ export default function EmailPage() {
                 key={email.id}
                 onClick={() => handleSelectEmail(email)}
                 className={cn(
-                  "flex w-full flex-col gap-1 border-b border-gray-100 px-4 py-3 text-left transition-colors",
-                  selectedEmail?.id === email.id
-                    ? "bg-gray-100"
-                    : "hover:bg-gray-50",
+                  "flex w-full flex-col gap-1 border-b border-gray-100 px-4 py-3 text-left transition-colors hover:bg-gray-50",
                   !email.isRead && "bg-gray-50/50"
                 )}
               >
@@ -568,18 +562,19 @@ export default function EmailPage() {
           )}
         </div>
       </div>
+      )}
 
-      {/* Right Panel — Email Detail */}
+      {/* Email Detail */}
       {selectedEmail && (
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex flex-col">
           {/* Detail Header */}
-          <div className="flex items-center gap-1 md:gap-2 border-b border-gray-200 px-3 md:px-6 py-2 md:py-3 flex-wrap">
+          <div className="flex items-center gap-2 border-b border-gray-200 pb-3 mb-4">
             <button
               onClick={() => {
                 setSelectedEmail(null);
                 setAnalysis(null);
               }}
-              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -587,7 +582,7 @@ export default function EmailPage() {
             <button
               onClick={() => handleAnalyze(selectedEmail.id)}
               disabled={analyzing}
-              className="flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 min-h-[44px] md:min-h-0"
+              className="flex items-center gap-1.5 rounded-lg bg-purple-50 px-3 py-1.5 text-sm font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50"
             >
               {analyzing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -607,42 +602,42 @@ export default function EmailPage() {
                 });
                 setSelectedEmail(null);
               }}
-              className="flex items-center gap-1.5 rounded-lg px-2 md:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] md:min-h-0"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
               <Mail className="h-4 w-4" />
-              <span className="hidden md:inline">Unread</span>
+              Unread
             </button>
             <button
               onClick={() => {
                 setReplyMode("reply");
                 setAiReply("");
               }}
-              className="flex items-center gap-1.5 rounded-lg px-2 md:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] md:min-h-0"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
               <Reply className="h-4 w-4" />
-              <span className="hidden md:inline">Reply</span>
+              Reply
             </button>
             <button
               onClick={() => {
                 setReplyMode("forward");
                 setAiReply("");
               }}
-              className="flex items-center gap-1.5 rounded-lg px-2 md:px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 min-h-[44px] md:min-h-0"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
               <Forward className="h-4 w-4" />
-              <span className="hidden md:inline">Forward</span>
+              Forward
             </button>
             <button
               onClick={() => handleDelete(selectedEmail.id)}
-              className="rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center"
+              className="rounded-lg p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600"
             >
               <Trash2 className="h-4 w-4" />
             </button>
           </div>
 
           {/* Email Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-4 md:px-6 py-4">
+          <div className="flex-1">
+            <div>
               {/* Subject */}
               <h2 className="text-xl font-semibold text-gray-900">
                 {selectedEmail.subject || "(no subject)"}
